@@ -9,3 +9,13 @@
    ```bash
    git clone https://github.com/Tetris445/h-lang.git
    cd h-lang
+## Пример кода
+
+Создайте файл `hello.h`:
+```h
+include color
+say Привет, мир!
+green Успех!
+add 5 10
+
+./h hello.h (запуск) 
