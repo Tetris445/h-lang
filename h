@@ -10,6 +10,7 @@ if (!fs.existsSync(filename)) { console.error('File not found: ' + filename); pr
 
 const source = fs.readFileSync(filename, 'utf-8');
 const commands = {};
+let customFuncs = [];
 
 function loadLibrary(name) {
     const libPath = path.join(__dirname, 'lib', name + '.js');
@@ -22,13 +23,18 @@ function transpile(code) {
     const out = [];
     let indent = 0;
     const sp = () => '    '.repeat(Math.max(0, indent));
+    
+    // Сначала собираем имена всех функций
+    for (let raw of lines) {
+        const m = raw.trim().match(/^func\s+(\w+)/);
+        if (m) customFuncs.push(m[1]);
+    }
 
     for (let raw of lines) {
         let line = raw.trim();
         if (!line || line.startsWith('#')) continue;
 
-        if (line === "version" || line === "ver") { out.push(sp() + 'hPrint("h 2.4.1");'); continue; }
-
+        // INCLUDE
         if (line.startsWith('include ')) {
             const libName = line.slice(8).trim();
             const lib = loadLibrary(libName);
@@ -36,57 +42,61 @@ function transpile(code) {
             continue;
         }
 
+        // МАССИВЫ
         if (line.startsWith('let ') && line.includes('[') && line.includes(']')) {
             const match = line.match(/let\s+(\w+)\s*=\s*\[(.*?)\]/);
-            if (match) {
-                const name = match[1];
-                const values = match[2].split(',').map(v => v.trim()).join(', ');
-                out.push(sp() + 'let ' + name + ' = [' + values + '];');
-                continue;
-            }
+            if (match) { out.push(sp() + 'let ' + match[1] + ' = [' + match[2] + '];'); continue; }
         }
 
+        // ЧТЕНИЕ МАССИВА
         if (line.includes('[') && line.includes(']') && !line.startsWith('let ')) {
             const match = line.match(/(\w+)\[(\d+)\]/);
             if (match) { out.push(sp() + 'hPrint(' + match[1] + '[' + match[2] + ']);'); continue; }
         }
 
+        // ОПРЕДЕЛЕНИЕ ФУНКЦИИ
         if (line.startsWith('func ')) {
             const match = line.match(/func\s+(\w+)\s*\((.*?)\)/);
             if (match) { out.push(sp() + 'function ' + match[1] + '(' + match[2] + ') {'); indent++; continue; }
         }
         if (line.startsWith('return ')) { out.push(sp() + 'return ' + line.slice(7) + ';'); continue; }
 
-        if (line.includes('(') && line.includes(')') && !line.startsWith('if ') && !line.startsWith('while ') && !line.startsWith('func ')) {
-            out.push(sp() + 'hPrint(' + line + ');'); continue;
+        // ВЫЗОВ ФУНКЦИИ (ВНУТРИ SAY)
+        if (line.startsWith('say ')) {
+            const content = line.slice(4).trim();
+            const parts = content.split(/\s+/);
+            if (parts.length > 1 && customFuncs.includes(parts[0])) {
+                const args = parts.slice(1).join(', ');
+                out.push(sp() + 'hPrint(' + parts[0] + '(' + args + '));');
+            } else if (parts.length === 3 && ['add','sub','mul','div'].includes(parts[0])) {
+                const op = parts[0]==='add'?'+':parts[0]==='sub'?'-':parts[0]==='mul'?'*':'/';
+                out.push(sp() + 'hPrint(' + parts[1] + ' ' + op + ' ' + parts[2] + ');');
+            } else {
+                out.push(sp() + 'hPrint(' + JSON.stringify(content) + ');');
+            }
+            continue;
         }
 
+        // ЦИКЛ FOR
         if (line.startsWith('for ')) {
             const match = line.match(/for\s+(\w+)\s+in\s+(\d+)\s+(\d+)/);
             if (match) { out.push(sp() + 'for (let ' + match[1] + ' = ' + match[2] + '; ' + match[1] + ' <= ' + match[3] + '; ' + match[1] + '++) {'); indent++; continue; }
         }
 
-        if (line.startsWith('say ')) { out.push(sp() + 'hPrint(' + JSON.stringify(line.slice(4)) + ');'); continue; }
-        if (line.startsWith('add ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' + ' + p[1] + ');'); continue; }
-        if (line.startsWith('sub ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' - ' + p[1] + ');'); continue; }
-        if (line.startsWith('mul ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' * ' + p[1] + ');'); continue; }
-        if (line.startsWith('div ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' / ' + p[1] + ');'); continue; }
+        // БАЗОВЫЕ
         if (line.startsWith('red ')) { out.push(sp() + 'hPrint("\\x1b[31m" + ' + JSON.stringify(line.slice(4)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('green ')) { out.push(sp() + 'hPrint("\\x1b[32m" + ' + JSON.stringify(line.slice(6)) + ' + "\\x1b[0m");'); continue; }
+        if (line.startsWith('yellow ')) { out.push(sp() + 'hPrint("\\x1b[33m" + ' + JSON.stringify(line.slice(7)) + ' + "\\x1b[0m");'); continue; }
+        if (line.startsWith('blue ')) { out.push(sp() + 'hPrint("\\x1b[34m" + ' + JSON.stringify(line.slice(5)) + ' + "\\x1b[0m");'); continue; }
 
+        // ПЕРЕМЕННЫЕ
         if (line.startsWith('let ')) { out.push(sp() + line.slice(4) + ';'); continue; }
 
+        // ЛОГИКА
         if (line.startsWith('if ')) { out.push(sp() + 'if (' + line.slice(3) + ') {'); indent++; continue; }
         if (line === 'else') { if(indent > 0) indent--; out.push(sp() + '} else {'); indent++; continue; }
         if (line.startsWith('while ')) { out.push(sp() + 'while (' + line.slice(6) + ') {'); indent++; continue; }
         if (line === 'end') { if(indent > 0) indent--; out.push(sp() + '}'); continue; }
-
-        const firstWord = line.split(/\s+/)[0];
-        if (commands[firstWord]) {
-            const rest = line.slice(firstWord.length).trim();
-            out.push(sp() + 'hPrint(commands["' + firstWord + '"](' + (isNaN(rest) && rest !== '' ? JSON.stringify(rest) : rest) + '));');
-            continue;
-        }
 
         out.push(sp() + line + ';');
     }
