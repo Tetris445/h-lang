@@ -10,7 +10,6 @@ if (!fs.existsSync(filename)) { console.error('File not found: ' + filename); pr
 
 const source = fs.readFileSync(filename, 'utf-8');
 const commands = {};
-let customFuncs = [];
 
 function loadLibrary(name) {
     const libPath = path.join(__dirname, 'lib', name + '.js');
@@ -23,12 +22,6 @@ function transpile(code) {
     const out = [];
     let indent = 0;
     const sp = () => '    '.repeat(Math.max(0, indent));
-    
-    // Сначала собираем имена всех функций
-    for (let raw of lines) {
-        const m = raw.trim().match(/^func\s+(\w+)/);
-        if (m) customFuncs.push(m[1]);
-    }
 
     for (let raw of lines) {
         let line = raw.trim();
@@ -54,26 +47,19 @@ function transpile(code) {
             if (match) { out.push(sp() + 'hPrint(' + match[1] + '[' + match[2] + ']);'); continue; }
         }
 
-        // ОПРЕДЕЛЕНИЕ ФУНКЦИИ
+        // ФУНКЦИИ
         if (line.startsWith('func ')) {
             const match = line.match(/func\s+(\w+)\s*\((.*?)\)/);
             if (match) { out.push(sp() + 'function ' + match[1] + '(' + match[2] + ') {'); indent++; continue; }
         }
         if (line.startsWith('return ')) { out.push(sp() + 'return ' + line.slice(7) + ';'); continue; }
 
-        // ВЫЗОВ ФУНКЦИИ (ВНУТРИ SAY)
-        if (line.startsWith('say ')) {
-            const content = line.slice(4).trim();
-            const parts = content.split(/\s+/);
-            if (parts.length > 1 && customFuncs.includes(parts[0])) {
-                const args = parts.slice(1).join(', ');
-                out.push(sp() + 'hPrint(' + parts[0] + '(' + args + '));');
-            } else if (parts.length === 3 && ['add','sub','mul','div'].includes(parts[0])) {
-                const op = parts[0]==='add'?'+':parts[0]==='sub'?'-':parts[0]==='mul'?'*':'/';
-                out.push(sp() + 'hPrint(' + parts[1] + ' ' + op + ' ' + parts[2] + ');');
-            } else {
-                out.push(sp() + 'hPrint(' + JSON.stringify(content) + ');');
-            }
+        // ВЫЗОВ ФУНКЦИИ (без скобок)
+        const parts = line.split(/\s+/);
+        const isFunc = lines.some(l => l.trim().startsWith('func ' + parts[0] + ' '));
+        if (parts.length > 1 && isFunc) {
+            const args = parts.slice(1).join(', ');
+            out.push(sp() + 'hPrint(' + parts[0] + '(' + args + '));');
             continue;
         }
 
@@ -84,6 +70,24 @@ function transpile(code) {
         }
 
         // БАЗОВЫЕ
+        if (line.startsWith('say ')) { out.push(sp() + 'hPrint(' + JSON.stringify(line.slice(4)) + ');'); continue; }
+        if (line.startsWith('add ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' + ' + p[1] + ');'); continue; }
+        if (line.startsWith('sub ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' - ' + p[1] + ');'); continue; }
+        if (line.startsWith('mul ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' * ' + p[1] + ');'); continue; }
+        if (line.startsWith('div ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' / ' + p[1] + ');'); continue; }
+
+        // МАТЕМАТИКА
+        if (line.startsWith('sqrt ')) { out.push(sp() + 'hPrint(Math.sqrt(' + line.slice(5) + '));'); continue; }
+        if (line.startsWith('pow ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(Math.pow(' + p[0] + ', ' + p[1] + '));'); continue; }
+        if (line.startsWith('sin ')) { out.push(sp() + 'hPrint(Math.sin(' + line.slice(4) + '));'); continue; }
+        if (line.startsWith('cos ')) { out.push(sp() + 'hPrint(Math.cos(' + line.slice(4) + '));'); continue; }
+        if (line.startsWith('abs ')) { out.push(sp() + 'hPrint(Math.abs(' + line.slice(4) + '));'); continue; }
+        if (line.startsWith('floor ')) { out.push(sp() + 'hPrint(Math.floor(' + line.slice(6) + '));'); continue; }
+        if (line.startsWith('ceil ')) { out.push(sp() + 'hPrint(Math.ceil(' + line.slice(5) + '));'); continue; }
+        if (line.startsWith('round ')) { out.push(sp() + 'hPrint(Math.round(' + line.slice(6) + '));'); continue; }
+        if (line === 'pi') { out.push(sp() + 'hPrint(Math.PI);'); continue; }
+
+        // ЦВЕТА
         if (line.startsWith('red ')) { out.push(sp() + 'hPrint("\\x1b[31m" + ' + JSON.stringify(line.slice(4)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('green ')) { out.push(sp() + 'hPrint("\\x1b[32m" + ' + JSON.stringify(line.slice(6)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('yellow ')) { out.push(sp() + 'hPrint("\\x1b[33m" + ' + JSON.stringify(line.slice(7)) + ' + "\\x1b[0m");'); continue; }
