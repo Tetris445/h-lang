@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta name="google-site-verification" content="dAbhWY9J3YXaWqPYyjz8U7rPAO2MydiZKna8IbHFPlY" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>h — Язык программирования</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-        body { background: #050505; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; line-height: 1.6; overflow-x: hidden; }
+        body { background: #050505; color: #e0e0e0; font-family: 'Courier New', monospace; line-height: 1.6; overflow-x: hidden; }
         .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
         .code-block, .code-block * { -webkit-tap-highlight-color: rgba(0, 210, 255, 0.2); -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #1a1a1a; margin-bottom: 60px; }
@@ -25,7 +24,7 @@
         section { margin-bottom: 60px; }
         h2 { font-size: 28px; font-weight: 700; color: #ffd700; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
         h2 svg { width: 24px; height: 24px; stroke: #ffd700; fill: none; stroke-width: 2; }
-        .code-block { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid #00d2ff; border-radius: 8px; padding: 24px; overflow-x: auto; font-size: 15px; line-height: 1.7; margin-bottom: 30px; }
+        .code-block { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid #00d2ff; border-radius: 8px; padding: 16px; overflow-x: auto; white-space: pre; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
         .c-keyword { color: #00d2ff; }
         .c-string { color: #00ff87; }
         .c-command { color: #ffd700; }
@@ -59,20 +58,38 @@
         </div>
         <section>
             <h2><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Пример кода</h2>
-            <div class="code-block">
-                <span class="c-comment"># Подключаем библиотеки</span><br>
-                <span class="c-keyword">include</span> color<br>
-                <span class="c-keyword">include</span> time<br><br>
-                <span class="c-command">say</span> <span class="c-string">=== Привет, мир! ===</span><br>
-                <span class="c-command">green</span> Это зеленый текст<br>
-                <span class="c-command">red</span> А это красный<br><br>
-                <span class="c-comment"># Работа с функциями</span><br>
-                <span class="c-keyword">func</span> square(n)<br>
-                &nbsp;&nbsp;<span class="c-keyword">return</span> n * n<br>
-                <span class="c-keyword">end</span><br><br>
-                <span class="c-command">say</span> Квадрат 5:<br>
-                <span class="c-command">square</span> 5
-            </div>
+            <div class="code-block"><span class="c-comment"># Самый простой Hello World</span>
+<span class="c-command">say</span> <span class="c-string">Привет, мир!</span>
+
+<span class="c-comment"># Переменные и математика</span>
+<span class="c-keyword">let</span> x = 10
+<span class="c-keyword">let</span> y = 5
+<span class="c-command">add</span> x y
+<span class="c-command">sub</span> x y
+
+<span class="c-comment"># Цветной вывод</span>
+<span class="c-keyword">include</span> color
+<span class="c-command">green</span> Это зелёный текст
+<span class="c-command">red</span> А это красный
+
+<span class="c-comment"># Условие (если x больше 5)</span>
+<span class="c-keyword">if</span> x &gt; 5
+    <span class="c-command">say</span> x больше пяти!
+<span class="c-keyword">end</span></div>
+        </section>
+        <section>
+            <h2><svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>Установка и запуск</h2>
+            <p style="color: #888; margin-bottom: 15px;">1. Скачайте проект и дайте права на запуск:</p>
+            <div class="code-block"><span class="c-command">git clone</span> https://github.com/Tetris445/h-lang.git
+<span class="c-command">cd</span> h-lang
+<span class="c-command">chmod</span> +x h</div>
+            <p style="color: #888; margin-bottom: 15px; margin-top: 20px;">2. Создайте файл с кодом (например, <code>test.h</code>):</p>
+            <div class="code-block"><span class="c-command">cat</span> > progs/test.h &lt;&lt; <span class="c-string">'EOF'</span>
+<span class="c-command">say</span> <span class="c-string">Привет, мир!</span>
+<span class="c-string">EOF</span></div>
+            <p style="color: #888; margin-bottom: 15px; margin-top: 20px;">3. Запустите его:</p>
+            <div class="code-block"><span class="c-command">./h</span> progs/test.h</div>
+            <p style="color: #00ff87; margin-top: 15px; font-weight: bold;">✅ Результат: Привет, мир!</p>
         </section>
         <section>
             <h2><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Возможности</h2>
@@ -97,15 +114,6 @@
                     <h3>Открытый код</h3>
                     <p>Полностью открыт на GitHub. Изучай, меняй, предлагай улучшения.</p>
                 </div>
-            </div>
-        </section>
-        <section>
-            <h2><svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>Установка</h2>
-            <div class="code-block">
-                <span class="c-command">git clone</span> https://github.com/Tetris445/h-lang.git<br>
-                <span class="c-command">cd</span> h-lang<br>
-                <span class="c-command">chmod</span> +x h<br>
-                <span class="c-command">./h</span> progs/hello.h
             </div>
         </section>
         <footer>
