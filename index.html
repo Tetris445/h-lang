@@ -6,41 +6,66 @@
     <title>h — Язык программирования</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-        body { background: #050505; color: #e0e0e0; font-family: 'Courier New', monospace; line-height: 1.6; overflow-x: hidden; }
+        body { background: #050505; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; line-height: 1.6; overflow-x: hidden; }
         .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        
         .code-block, .code-block * { -webkit-tap-highlight-color: rgba(0, 210, 255, 0.2); -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #1a1a1a; margin-bottom: 60px; }
+
+        /* Шапка */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #1a1a1a; margin-bottom: 40px; }
         .logo { font-size: 28px; font-weight: 800; color: #00d2ff; letter-spacing: -1px; }
         .btn-nav { display: flex; align-items: center; gap: 8px; background: #111; color: #00ff87; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid #222; transition: 0.2s; }
         .btn-nav:hover { border-color: #00ff87; }
         .btn-nav svg { width: 16px; height: 16px; stroke: #00ff87; fill: none; stroke-width: 2; }
-        .hero { text-align: center; margin-bottom: 80px; }
+
+        /* Герой */
+        .hero { text-align: center; margin-bottom: 60px; }
         .hero h1 { font-size: 64px; font-weight: 900; letter-spacing: -2px; color: #fff; margin-bottom: 20px; text-shadow: 0 0 20px rgba(0, 210, 255, 0.3); }
         .hero h1 span { color: #ffd700; }
         .hero p { font-size: 18px; color: #888; max-width: 600px; margin: 0 auto 30px; }
+        
         .btn-main { display: inline-flex; align-items: center; gap: 10px; background: #00d2ff; color: #000; padding: 16px 40px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: 800; box-shadow: 0 0 30px rgba(0, 210, 255, 0.4); transition: 0.3s; }
         .btn-main:hover { background: #00ff87; box-shadow: 0 0 40px rgba(0, 255, 135, 0.6); }
         .btn-main svg { width: 20px; height: 20px; stroke: #000; fill: none; stroke-width: 2; }
-        section { margin-bottom: 60px; }
-        h2 { font-size: 28px; font-weight: 700; color: #ffd700; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
-        h2 svg { width: 24px; height: 24px; stroke: #ffd700; fill: none; stroke-width: 2; }
-        .code-block { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid #00d2ff; border-radius: 8px; padding: 16px; overflow-x: auto; white-space: pre; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
-        .c-keyword { color: #00d2ff; }
+
+        /* Секции документации */
+        section { margin-bottom: 50px; background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 24px; }
+        section:hover { border-color: #333; }
+        h2 { font-size: 24px; font-weight: 700; color: #00d2ff; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #1a1a1a; padding-bottom: 10px; }
+        h2 svg { width: 24px; height: 24px; stroke: #00d2ff; fill: none; stroke-width: 2; }
+        
+        h3 { font-size: 18px; color: #ffd700; margin: 20px 0 10px 0; }
+        p { color: #aaa; margin-bottom: 15px; font-size: 15px; }
+        code { background: #1a1a1a; color: #00ff87; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+
+        /* Блоки кода */
+        .code-block { background: #111; border-left: 4px solid #00d2ff; border-radius: 0 8px 8px 0; padding: 15px; overflow-x: auto; white-space: pre; font-size: 14px; line-height: 1.5; margin-bottom: 15px; color: #eee; }
+        .c-keyword { color: #00d2ff; font-weight: bold; }
         .c-string { color: #00ff87; }
         .c-command { color: #ffd700; }
         .c-comment { color: #555; font-style: italic; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .card { background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 24px; transition: 0.3s; }
-        .card:hover { border-color: #00d2ff; box-shadow: 0 0 20px rgba(0, 210, 255, 0.1); }
-        .icon-wrap { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #111; border-radius: 8px; margin-bottom: 15px; }
-        .icon-wrap svg { width: 24px; height: 24px; stroke: #00ff87; fill: none; stroke-width: 2; }
-        .card h3 { color: #fff; font-size: 18px; margin-bottom: 10px; }
-        .card p { color: #888; font-size: 14px; }
-        footer { text-align: center; padding: 40px 0; border-top: 1px solid #1a1a1a; color: #444; font-size: 14px; }
+        .c-number { color: #ff85c0; }
+
+        /* Футер */
+        footer { text-align: center; padding: 40px 0; border-top: 1px solid #1a1a1a; color: #444; font-size: 14px; margin-top: 40px; }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            header { flex-direction: row; justify-content: space-between; align-items: center; padding: 15px 0; margin-bottom: 40px; }
+            .logo { font-size: 24px; }
+            .hero h1 { font-size: 42px; }
+            .hero p { font-size: 15px; }
+            .btn-main { padding: 14px 20px; font-size: 16px; width: 100%; justify-content: center; }
+            section { padding: 16px; }
+            h2 { font-size: 20px; }
+            .code-block { font-size: 12px; padding: 10px; }
+        }
     </style>
 </head>
 <body>
+
     <div class="container">
+        <!-- Шапка -->
         <header>
             <div class="logo">h_</div>
             <a href="https://github.com/Tetris445/h-lang" class="btn-nav">
@@ -48,77 +73,183 @@
                 GitHub
             </a>
         </header>
+
+        <!-- Герой -->
         <div class="hero">
             <h1>Язык <span>h</span></h1>
-            <p>Легкий, быстрый и открытый язык программирования для Termux и Android. Написан на Node.js.</p>
-            <a href="https://github.com/Tetris445/h-lang" class="btn-main">
+            <p>Легкий, быстрый и открытый язык программирования для Termux и Android. Всё, что нужно знать — в одной шпаргалке.</p>
+            <a href="https://github.com/Tetris445/h-lang/releases" class="btn-main">
                 <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Скачать бесплатно
+                Скачать приложение
             </a>
         </div>
+
+        <!-- Основы -->
         <section>
-            <h2><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Пример кода</h2>
-            <div class="code-block"><span class="c-comment"># Самый простой Hello World</span>
-<span class="c-command">say</span> <span class="c-string">Привет, мир!</span>
+            <h2>
+                <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                Основы и вывод
+            </h2>
+            <p>Всё начинается с команды <code>say</code>. Она выводит текст на экран.</p>
+            <div class="code-block"><span class="c-command">say</span> <span class="c-string">Привет, мир!</span>
+<span class="c-comment"># Если нужно вывести переменную, просто напиши её имя:</span>
+<span class="c-keyword">let</span> name = Вася
+<span class="c-command">say</span> name</div>
 
-<span class="c-comment"># Переменные и математика</span>
-<span class="c-keyword">let</span> x = 10
-<span class="c-keyword">let</span> y = 5
-<span class="c-command">add</span> x y
-<span class="c-command">sub</span> x y
+            <h3>Цветной вывод</h3>
+            <p>Можно красить текст прямо в терминале. Доступно 4 цвета:</p>
+            <div class="code-block"><span class="c-command">red</span> Ошибка!
+<span class="c-command">green</span> Успех!
+<span class="c-command">yellow</span> Внимание!
+<span class="c-command">blue</span> Информация</div>
+        </section>
 
-<span class="c-comment"># Цветной вывод</span>
-<span class="c-keyword">include</span> color
-<span class="c-command">green</span> Это зелёный текст
-<span class="c-command">red</span> А это красный
+        <!-- Математика -->
+        <section>
+            <h2>
+                <svg viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+                Математика
+            </h2>
+            <p>Базовые операции и математические функции.</p>
+            <div class="code-block"><span class="c-comment"># Арифметика</span>
+<span class="c-command">add</span> 10 5      <span class="c-comment"># Сложение (15)</span>
+<span class="c-command">sub</span> 10 5      <span class="c-comment"># Вычитание (5)</span>
+<span class="c-command">mul</span> 10 5      <span class="c-comment"># Умножение (50)</span>
+<span class="c-command">div</span> 10 5      <span class="c-comment"># Деление (2)</span>
 
-<span class="c-comment"># Условие (если x больше 5)</span>
+<span class="c-comment"># Математические функции</span>
+<span class="c-command">sqrt</span> 25       <span class="c-comment"># Квадратный корень (5)</span>
+<span class="c-command">pow</span> 2 3       <span class="c-comment"># Возведение в степень (8)</span>
+<span class="c-command">abs</span> -5        <span class="c-comment"># Модуль (5)</span>
+<span class="c-command">round</span> 3.7     <span class="c-comment"># Округление (4)</span>
+<span class="c-command">pi</span>            <span class="c-comment"># Число Пи (3.1415...)</span></div>
+        </section>
+
+        <!-- Переменные и ввод -->
+        <section>
+            <h2>
+                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Переменные и ввод
+            </h2>
+            <p>Переменные создаются через <code>let</code>. А чтобы спросить что-то у пользователя, используется <code>input()</code>.</p>
+            <div class="code-block"><span class="c-keyword">let</span> x = <span class="c-number">10</span>
+<span class="c-keyword">let</span> name = Вася
+
+<span class="c-comment"># Ввод с клавиатуры</span>
+<span class="c-keyword">let</span> answer = <span class="c-command">input()</span>
+<span class="c-comment"># Превратить текст в число</span>
+<span class="c-keyword">let</span> num = <span class="c-command">number</span> answer</div>
+        </section>
+
+        <!-- Условия -->
+        <section>
+            <h2>
+                <svg viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                Условия (if/else)
+            </h2>
+            <p>Позволяют выполнять код только при определенных условиях.</p>
+            <div class="code-block"><span class="c-keyword">let</span> x = <span class="c-number">10</span>
 <span class="c-keyword">if</span> x &gt; 5
-    <span class="c-command">say</span> x больше пяти!
+    <span class="c-command">say</span> x больше пяти
+<span class="c-keyword">else</span>
+    <span class="c-command">say</span> x меньше или равно пяти
 <span class="c-keyword">end</span></div>
         </section>
+
+        <!-- Циклы -->
         <section>
-            <h2><svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>Установка и запуск</h2>
-            <p style="color: #888; margin-bottom: 15px;">1. Скачайте проект и дайте права на запуск:</p>
-            <div class="code-block"><span class="c-command">git clone</span> https://github.com/Tetris445/h-lang.git
-<span class="c-command">cd</span> h-lang
-<span class="c-command">chmod</span> +x h</div>
-            <p style="color: #888; margin-bottom: 15px; margin-top: 20px;">2. Создайте файл с кодом (например, <code>test.h</code>):</p>
-            <div class="code-block"><span class="c-command">cat</span> > progs/test.h &lt;&lt; <span class="c-string">'EOF'</span>
-<span class="c-command">say</span> <span class="c-string">Привет, мир!</span>
-<span class="c-string">EOF</span></div>
-            <p style="color: #888; margin-bottom: 15px; margin-top: 20px;">3. Запустите его:</p>
-            <div class="code-block"><span class="c-command">./h</span> progs/test.h</div>
-            <p style="color: #00ff87; margin-top: 15px; font-weight: bold;">✅ Результат: Привет, мир!</p>
+            <h2>
+                <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Циклы (for / while)
+            </h2>
+            <p>Повторяют код несколько раз. <code>for</code> работает с диапазоном чисел.</p>
+            <div class="code-block"><span class="c-comment"># Цикл for (от 1 до 3)</span>
+<span class="c-keyword">for</span> i <span class="c-keyword">in</span> 1 3
+    <span class="c-command">add</span> i 0  <span class="c-comment"># Выведет 1, 2, 3</span>
+<span class="c-keyword">end</span>
+
+<span class="c-comment"># Цикл while (пока x меньше 5)</span>
+<span class="c-keyword">let</span> x = 0
+<span class="c-keyword">while</span> x &lt; 5
+    <span class="c-command">add</span> x 0
+    <span class="c-keyword">let</span> x = <span class="c-command">add</span> x 1
+<span class="c-keyword">end</span></div>
         </section>
+
+        <!-- Массивы -->
         <section>
-            <h2><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Возможности</h2>
-            <div class="grid">
-                <div class="card">
-                    <div class="icon-wrap"><svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
-                    <h3>Быстрый старт</h3>
-                    <p>Работает в Termux на Android. Не требует мощного ПК или сложной настройки.</p>
-                </div>
-                <div class="card">
-                    <div class="icon-wrap"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
-                    <h3>Умный парсер</h3>
-                    <p>Поддержка функций, массивов, циклов и условий. Все как у взрослых языков.</p>
-                </div>
-                <div class="card">
-                    <div class="icon-wrap"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-                    <h3>Библиотеки</h3>
-                    <p>Цветной вывод и работа с временем — из коробки. Можно добавлять свои.</p>
-                </div>
-                <div class="card">
-                    <div class="icon-wrap"><svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
-                    <h3>Открытый код</h3>
-                    <p>Полностью открыт на GitHub. Изучай, меняй, предлагай улучшения.</p>
-                </div>
-            </div>
+            <h2>
+                <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Массивы
+            </h2>
+            <p>Списки данных, доступ к которым идет по индексу (начиная с 0).</p>
+            <div class="code-block"><span class="c-keyword">let</span> nums = [<span class="c-number">10</span>, <span class="c-number">20</span>, <span class="c-number">30</span>]
+<span class="c-command">say</span> nums[0]   <span class="c-comment"># Выведет 10</span>
+<span class="c-command">say</span> nums[2]   <span class="c-comment"># Выведет 30</span></div>
         </section>
+
+        <!-- Функции -->
+        <section>
+            <h2>
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Функции
+            </h2>
+            <p>Позволяют вынести повторяющийся код в отдельный блок.</p>
+            <div class="code-block"><span class="c-keyword">func</span> square(n)
+    <span class="c-keyword">return</span> n * n
+<span class="c-keyword">end</span>
+
+<span class="c-comment"># Вызов функции (без скобок)</span>
+<span class="c-command">square</span> 5</div>
+        </section>
+
+        <!-- Время и приложение -->
+        <section>
+            <h2>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Время и фичи Android
+            </h2>
+            <p>В языке есть встроенные команды для работы со временем и управлением телефоном (в приложении).</p>
+            <div class="code-block"><span class="c-comment"># Время</span>
+<span class="c-command">now</span>     <span class="c-comment"># Текущая дата и время</span>
+<span class="c-command">year</span>    <span class="c-comment"># Год</span>
+<span class="c-command">month</span>   <span class="c-comment"># Месяц</span>
+<span class="c-command">day</span>     <span class="c-comment"># День</span>
+
+<span class="c-comment"># Управление телефоном (в приложении)</span>
+<span class="c-command">vibrate</span> 1000  <span class="c-comment"># Вибрация (в миллисекундах)</span>
+<span class="c-command">flash</span> on    <span class="c-comment"># Включить фонарик</span>
+<span class="c-command">notify</span> Привет  <span class="c-comment"># Показать уведомление</span></div>
+        </section>
+
+        <!-- Полный пример -->
+        <section>
+            <h2>
+                <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Пример: Угадай число
+            </h2>
+            <p>Вот как выглядит полноценная игра на языке <code>h</code>:</p>
+            <div class="code-block"><span class="c-keyword">let</span> secret = <span class="c-number">42</span>
+<span class="c-command">say</span> <span class="c-string">"Угадай число от 1 до 100:"</span>
+<span class="c-keyword">let</span> guess = <span class="c-command">input()</span>
+<span class="c-keyword">let</span> g = <span class="c-command">number</span> guess
+
+<span class="c-keyword">if</span> g == secret
+    <span class="c-command">say</span> <span class="c-string">"Угадал!"</span>
+<span class="c-keyword">end</span>
+<span class="c-keyword">if</span> g &lt; secret
+    <span class="c-command">say</span> <span class="c-string">"Мало"</span>
+<span class="c-keyword">end</span>
+<span class="c-keyword">if</span> g &gt; secret
+    <span class="c-command">say</span> <span class="c-string">"Много"</span>
+<span class="c-keyword">end</span></div>
+        </section>
+
+        <!-- Футер -->
         <footer>
             <p>Сделано с <span style="color: #ffd700;">❤</span> в 2026 году. Проект с открытым исходным кодом.</p>
         </footer>
     </div>
+
 </body>
 </html>
