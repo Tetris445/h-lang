@@ -56,7 +56,7 @@ function transpile(code) {
 
         // ВЫЗОВ ФУНКЦИИ (без скобок)
         const parts = line.split(/\s+/);
-        const isFunc = lines.some(l => l.trim().startsWith('func ' + parts[0] + ' '));
+        const isFunc = lines.some(l => { const t = l.trim(); return t.startsWith('func ' + parts[0] + ' ') || t.startsWith('func ' + parts[0] + '('); });
         if (parts.length > 1 && isFunc) {
             const args = parts.slice(1).join(', ');
             out.push(sp() + 'hPrint(' + parts[0] + '(' + args + '));');
