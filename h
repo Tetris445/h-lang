@@ -47,14 +47,14 @@ function transpile(code) {
             if (match) { out.push(sp() + 'hPrint(' + match[1] + '[' + match[2] + ']);'); continue; }
         }
 
-        // ФУНКЦИИ
+        // ОПРЕДЕЛЕНИЕ ФУНКЦИИ
         if (line.startsWith('func ')) {
             const match = line.match(/func\s+(\w+)\s*\((.*?)\)/);
             if (match) { out.push(sp() + 'function ' + match[1] + '(' + match[2] + ') {'); indent++; continue; }
         }
         if (line.startsWith('return ')) { out.push(sp() + 'return ' + line.slice(7) + ';'); continue; }
 
-        // ВЫЗОВ ФУНКЦИИ (без скобок)
+        // ВЫЗОВ ФУНКЦИИ
         const parts = line.split(/\s+/);
         const isFunc = lines.some(l => l.trim().startsWith('func ' + parts[0] + ' '));
         if (parts.length > 1 && isFunc) {
@@ -69,8 +69,19 @@ function transpile(code) {
             if (match) { out.push(sp() + 'for (let ' + match[1] + ' = ' + match[2] + '; ' + match[1] + ' <= ' + match[3] + '; ' + match[1] + '++) {'); indent++; continue; }
         }
 
+        // SAY (с проверкой на команды библиотек)
+        if (commands[line.split(/\s+/)[0]]) { const parts = line.split(/\s+/); out.push(sp() + "hPrint(commands[\"" + parts[0] + "\"]());"); continue; }
+        if (line.startsWith('say ')) {
+            const content = line.slice(4).trim();
+            if (commands[content]) {
+                out.push(sp() + 'hPrint(commands["' + content + '"]());');
+            } else {
+                out.push(sp() + 'hPrint(' + JSON.stringify(content) + ');');
+            }
+            continue;
+        }
+
         // БАЗОВЫЕ
-        if (line.startsWith('say ')) { out.push(sp() + 'hPrint(' + JSON.stringify(line.slice(4)) + ');'); continue; }
         if (line.startsWith('add ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' + ' + p[1] + ');'); continue; }
         if (line.startsWith('sub ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' - ' + p[1] + ');'); continue; }
         if (line.startsWith('mul ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' * ' + p[1] + ');'); continue; }
@@ -109,5 +120,5 @@ function transpile(code) {
 
 function hPrint(text) { console.log(text); }
 const jsCode = transpile(source);
-const context = { console: console, process: process, os: os, fs: fs, hPrint: hPrint, commands: commands };
+const context = { console: console, process: process, os: os, fs: fs, hPrint: hPrint, commands: commands, Math: Math };
 try { vm.createContext(context); vm.runInContext(jsCode, context); } catch (e) { console.error('Runtime error: ' + e.message); }
