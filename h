@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const vm = require('vm');
-const os = require('os');
 const path = require('path');
 
 const filename = process.argv[2];
@@ -20,13 +19,13 @@ function loadLibrary(name) {
 function transpile(code) {
     const lines = code.split('\n');
     const out = [];
-    const sp = () => '';
+    const sp = () => ''; // Отступы отключены навсегда
 
     for (let raw of lines) {
         let line = raw.trim();
         if (!line || line.startsWith('#')) continue;
 
-        // 1. INCLUDE
+        // 1. Библиотеки
         if (line.startsWith('include ')) {
             const libName = line.slice(8).trim();
             const lib = loadLibrary(libName);
@@ -34,26 +33,26 @@ function transpile(code) {
             continue;
         }
 
-        // 2. МАССИВЫ
+        // 2. Массивы
         if (line.startsWith('let ') && line.includes('[') && line.includes(']')) {
             const match = line.match(/let\s+(\w+)\s*=\s*\[(.*?)\]/);
             if (match) { out.push(sp() + 'let ' + match[1] + ' = [' + match[2] + '];'); continue; }
         }
 
-        // 3. ЧТЕНИЕ МАССИВА
+        // 3. Чтение массива
         if (line.includes('[') && line.includes(']') && !line.startsWith('let ')) {
             const match = line.match(/(\w+)\[(\d+)\]/);
             if (match) { out.push(sp() + 'hPrint(' + match[1] + '[' + match[2] + ']);'); continue; }
         }
 
-        // 4. ФУНКЦИИ
+        // 4. Функции
         if (line.startsWith('func ')) {
             const match = line.match(/func\s+(\w+)\s*\((.*?)\)/);
             if (match) { out.push(sp() + 'function ' + match[1] + '(' + match[2] + ') {'); continue; }
         }
         if (line.startsWith('return ')) { out.push(sp() + 'return ' + line.slice(7) + ';'); continue; }
 
-        // 5. ВЫЗОВ ФУНКЦИИ (без скобок)
+        // 5. Вызов функций (без скобок)
         const parts = line.split(/\s+/);
         const isFunc = lines.some(l => l.trim().startsWith('func ' + parts[0] + ' ') || l.trim().startsWith('func ' + parts[0] + '('));
         if (parts.length > 1 && isFunc) {
@@ -62,36 +61,45 @@ function transpile(code) {
             continue;
         }
 
-        // 6. ЦИКЛ FOR
+        // 6. Циклы for
         if (line.startsWith('for ')) {
             const match = line.match(/for\s+(\w+)\s+in\s+(\d+)\s+(\d+)/);
             if (match) { out.push(sp() + 'for (let ' + match[1] + ' = ' + match[2] + '; ' + match[1] + ' <= ' + match[3] + '; ' + match[1] + '++) {'); continue; }
         }
 
-        // 7. ВЫВОД
+        // 7. ВЫВОД (Умный say)
         if (line.startsWith('say ')) {
-            const content = line.slice(4).trim();
+            let content = line.slice(4).trim();
             if (commands[content]) {
                 out.push(sp() + 'hPrint(commands["' + content + '"]());');
             } else {
-                out.push(sp() + 'hPrint(' + content + ');');
+                // Если это не переменная и не число, значит это текст. Оборачиваем в кавычки.
+                const isVar = /^[a-zA-Z_]\w*$/.test(content) && !commands[content];
+                const isNum = !isNaN(parseFloat(content)) && isFinite(content);
+                const isStr = content.startsWith('"') || content.startsWith("'");
+                
+                if (isVar || isNum || isStr) {
+                    out.push(sp() + 'hPrint(' + content + ');');
+                } else {
+                    out.push(sp() + 'hPrint("' + content.replace(/"/g, '\\"') + '");');
+                }
             }
             continue;
         }
 
-        // 8. ВРЕМЯ
+        // 8. Время
         if (line === 'now') { out.push(sp() + 'hPrint(new Date().toLocaleString());'); continue; }
         if (line === 'year') { out.push(sp() + 'hPrint(new Date().getFullYear());'); continue; }
         if (line === 'month') { out.push(sp() + 'hPrint(new Date().getMonth() + 1);'); continue; }
         if (line === 'day') { out.push(sp() + 'hPrint(new Date().getDate());'); continue; }
 
-        // 9. АРИФМЕТИКА
+        // 9. Арифметика
         if (line.startsWith('add ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' + ' + p[1] + ');'); continue; }
         if (line.startsWith('sub ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' - ' + p[1] + ');'); continue; }
         if (line.startsWith('mul ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' * ' + p[1] + ');'); continue; }
         if (line.startsWith('div ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' / ' + p[1] + ');'); continue; }
 
-        // 10. МАТЕМАТИКА
+        // 10. Математика
         if (line.startsWith('sqrt ')) { out.push(sp() + 'hPrint(Math.sqrt(' + line.slice(5) + '));'); continue; }
         if (line.startsWith('pow ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(Math.pow(' + p[0] + ', ' + p[1] + '));'); continue; }
         if (line.startsWith('sin ')) { out.push(sp() + 'hPrint(Math.sin(' + line.slice(4) + '));'); continue; }
@@ -102,13 +110,13 @@ function transpile(code) {
         if (line.startsWith('round ')) { out.push(sp() + 'hPrint(Math.round(' + line.slice(6) + '));'); continue; }
         if (line === 'pi') { out.push(sp() + 'hPrint(Math.PI);'); continue; }
 
-        // 11. ЦВЕТА
+        // 11. Цвета
         if (line.startsWith('red ')) { out.push(sp() + 'hPrint("\\x1b[31m" + ' + JSON.stringify(line.slice(4)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('green ')) { out.push(sp() + 'hPrint("\\x1b[32m" + ' + JSON.stringify(line.slice(6)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('yellow ')) { out.push(sp() + 'hPrint("\\x1b[33m" + ' + JSON.stringify(line.slice(7)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('blue ')) { out.push(sp() + 'hPrint("\\x1b[34m" + ' + JSON.stringify(line.slice(5)) + ' + "\\x1b[0m");'); continue; }
 
-        // 12. ПЕРЕМЕННЫЕ (с input)
+        // 12. Переменные (input)
         if (line.startsWith('let ') && line.includes('input()')) {
             const name = line.slice(4).split('=')[0].trim();
             out.push(sp() + 'let ' + name + ' = hRead();');
@@ -116,7 +124,7 @@ function transpile(code) {
         }
         if (line.startsWith('let ')) { out.push(sp() + 'let ' + line.slice(4) + ';'); continue; }
 
-        // 13. ЛОГИКА (без indent)
+        // 13. Логика (без отступов!)
         if (line.startsWith('if ')) { out.push(sp() + 'if (' + line.slice(3) + ') {'); continue; }
         if (line === 'else') { out.push(sp() + '} else {'); continue; }
         if (line.startsWith('while ')) { out.push(sp() + 'while (' + line.slice(6) + ') {'); continue; }
@@ -128,18 +136,14 @@ function transpile(code) {
 }
 
 function hPrint(text) { console.log(text); }
-
-// Синхронное чтение с клавиатуры для input()
 function hRead() {
     try {
         const buf = Buffer.alloc(1024);
         const bytes = fs.readSync(0, buf, 0, buf.length, null);
         return buf.toString('utf-8', 0, bytes).trim();
-    } catch (e) {
-        return '';
-    }
+    } catch (e) { return ''; }
 }
 
 const jsCode = transpile(source);
-const context = { console: console, process: process, os: os, fs: fs, hPrint: hPrint, hRead: hRead, commands: commands, Math: Math };
+const context = { console, process, os: require('os'), fs, hPrint, hRead, commands, Math };
 try { vm.createContext(context); vm.runInContext(jsCode, context); } catch (e) { console.error('Runtime error: ' + e.message); }
