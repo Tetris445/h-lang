@@ -54,7 +54,7 @@ function transpile(code) {
         }
         if (line.startsWith('return ')) { out.push(sp() + 'return ' + line.slice(7) + ';'); continue; }
 
-        // ВЫЗОВ ФУНКЦИИ
+        // ВЫЗОВ ФУНКЦИИ (без скобок)
         const parts = line.split(/\s+/);
         const isFunc = lines.some(l => l.trim().startsWith('func ' + parts[0] + ' '));
         if (parts.length > 1 && isFunc) {
@@ -69,40 +69,26 @@ function transpile(code) {
             if (match) { out.push(sp() + 'for (let ' + match[1] + ' = ' + match[2] + '; ' + match[1] + ' <= ' + match[3] + '; ' + match[1] + '++) {'); indent++; continue; }
         }
 
-        // SAY (с проверкой на команды библиотек)
-        if (commands[line.split(/\s+/)[0]]) { const parts = line.split(/\s+/); out.push(sp() + "hPrint(commands[\"" + parts[0] + "\"]());"); continue; }
-        if (line.startsWith('say ')) {
-            const content = line.slice(4).trim();
-            if (commands[content]) {
-                out.push(sp() + 'hPrint(commands["' + content + '"]());');
-            } else {
-                out.push(sp() + 'hPrint(' + JSON.stringify(content) + ');');
-            }
+        // БАЗОВЫЕ КОМАНДЫ (say, red, green и т.д.)
+        const firstWord = line.split(/\s+/)[0];
+        const rest = line.slice(firstWord.length).trim();
+        const isColor = ['red', 'green', 'yellow', 'blue'].includes(firstWord);
+        
+        if (isColor) {
+            out.push(sp() + 'hPrint("\\x1b[' + (firstWord==='red'?'31':firstWord==='green'?'32':firstWord==='yellow'?'33':'34') + 'm" + ' + JSON.stringify(rest) + ' + "\\x1b[0m");');
+            continue;
+        }
+        if (firstWord === 'say') {
+            out.push(sp() + 'hPrint(' + JSON.stringify(rest) + ');');
             continue;
         }
 
-        // БАЗОВЫЕ
+        // МАТЕМАТИКА
         if (line.startsWith('add ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' + ' + p[1] + ');'); continue; }
         if (line.startsWith('sub ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' - ' + p[1] + ');'); continue; }
         if (line.startsWith('mul ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' * ' + p[1] + ');'); continue; }
         if (line.startsWith('div ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(' + p[0] + ' / ' + p[1] + ');'); continue; }
-
-        // МАТЕМАТИКА
         if (line.startsWith('sqrt ')) { out.push(sp() + 'hPrint(Math.sqrt(' + line.slice(5) + '));'); continue; }
-        if (line.startsWith('pow ')) { const p = line.slice(4).split(/\s+/); out.push(sp() + 'hPrint(Math.pow(' + p[0] + ', ' + p[1] + '));'); continue; }
-        if (line.startsWith('sin ')) { out.push(sp() + 'hPrint(Math.sin(' + line.slice(4) + '));'); continue; }
-        if (line.startsWith('cos ')) { out.push(sp() + 'hPrint(Math.cos(' + line.slice(4) + '));'); continue; }
-        if (line.startsWith('abs ')) { out.push(sp() + 'hPrint(Math.abs(' + line.slice(4) + '));'); continue; }
-        if (line.startsWith('floor ')) { out.push(sp() + 'hPrint(Math.floor(' + line.slice(6) + '));'); continue; }
-        if (line.startsWith('ceil ')) { out.push(sp() + 'hPrint(Math.ceil(' + line.slice(5) + '));'); continue; }
-        if (line.startsWith('round ')) { out.push(sp() + 'hPrint(Math.round(' + line.slice(6) + '));'); continue; }
-        if (line === 'pi') { out.push(sp() + 'hPrint(Math.PI);'); continue; }
-
-        // ЦВЕТА
-        if (line.startsWith('red ')) { out.push(sp() + 'hPrint("\\x1b[31m" + ' + JSON.stringify(line.slice(4)) + ' + "\\x1b[0m");'); continue; }
-        if (line.startsWith('green ')) { out.push(sp() + 'hPrint("\\x1b[32m" + ' + JSON.stringify(line.slice(6)) + ' + "\\x1b[0m");'); continue; }
-        if (line.startsWith('yellow ')) { out.push(sp() + 'hPrint("\\x1b[33m" + ' + JSON.stringify(line.slice(7)) + ' + "\\x1b[0m");'); continue; }
-        if (line.startsWith('blue ')) { out.push(sp() + 'hPrint("\\x1b[34m" + ' + JSON.stringify(line.slice(5)) + ' + "\\x1b[0m");'); continue; }
 
         // ПЕРЕМЕННЫЕ
         if (line.startsWith('let ')) { out.push(sp() + line.slice(4) + ';'); continue; }
