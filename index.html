@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>h — Язык программирования</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        body { background: #050505; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; line-height: 1.6; overflow-x: hidden; }
+        .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        .code-block, .code-block * { -webkit-tap-highlight-color: rgba(0, 210, 255, 0.2); -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #1a1a1a; margin-bottom: 60px; }
+        .logo { font-size: 28px; font-weight: 800; color: #00d2ff; letter-spacing: -1px; }
+        .btn-nav { display: flex; align-items: center; gap: 8px; background: #111; color: #00ff87; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid #222; transition: 0.2s; }
+        .btn-nav:hover { border-color: #00ff87; }
+        .btn-nav svg { width: 16px; height: 16px; stroke: #00ff87; fill: none; stroke-width: 2; }
+        .hero { text-align: center; margin-bottom: 80px; }
+        .hero h1 { font-size: 64px; font-weight: 900; letter-spacing: -2px; color: #fff; margin-bottom: 20px; text-shadow: 0 0 20px rgba(0, 210, 255, 0.3); }
+        .hero h1 span { color: #ffd700; }
+        .hero p { font-size: 18px; color: #888; max-width: 600px; margin: 0 auto 30px; }
+        .btn-main { display: inline-flex; align-items: center; gap: 10px; background: #00d2ff; color: #000; padding: 16px 40px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: 800; box-shadow: 0 0 30px rgba(0, 210, 255, 0.4); transition: 0.3s; }
+        .btn-main:hover { background: #00ff87; box-shadow: 0 0 40px rgba(0, 255, 135, 0.6); }
+        .btn-main svg { width: 20px; height: 20px; stroke: #000; fill: none; stroke-width: 2; }
+        section { margin-bottom: 60px; }
+        h2 { font-size: 28px; font-weight: 700; color: #ffd700; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+        h2 svg { width: 24px; height: 24px; stroke: #ffd700; fill: none; stroke-width: 2; }
+        .code-block { background: #0a0a0a; border: 1px solid #222; border-left: 4px solid #00d2ff; border-radius: 8px; padding: 24px; overflow-x: auto; font-size: 15px; line-height: 1.7; margin-bottom: 30px; }
+        .c-keyword { color: #00d2ff; }
+        .c-string { color: #00ff87; }
+        .c-command { color: #ffd700; }
+        .c-comment { color: #555; font-style: italic; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 24px; transition: 0.3s; }
+        .card:hover { border-color: #00d2ff; box-shadow: 0 0 20px rgba(0, 210, 255, 0.1); }
+        .icon-wrap { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #111; border-radius: 8px; margin-bottom: 15px; }
+        .icon-wrap svg { width: 24px; height: 24px; stroke: #00ff87; fill: none; stroke-width: 2; }
+        .card h3 { color: #fff; font-size: 18px; margin-bottom: 10px; }
+        .card p { color: #888; font-size: 14px; }
+        footer { text-align: center; padding: 40px 0; border-top: 1px solid #1a1a1a; color: #444; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">h_</div>
+            <a href="https://github.com/Tetris445/h-lang" class="btn-nav">
+                <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                GitHub
+            </a>
+        </header>
+        <div class="hero">
+            <h1>Язык <span>h</span></h1>
+            <p>Легкий, быстрый и открытый язык программирования для Termux и Android. Написан на Node.js.</p>
+            <a href="https://github.com/Tetris445/h-lang" class="btn-main">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Скачать бесплатно
+            </a>
+        </div>
+        <section>
+            <h2><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Пример кода</h2>
+            <div class="code-block">
+                <span class="c-comment"># Подключаем библиотеки</span><br>
+                <span class="c-keyword">include</span> color<br>
+                <span class="c-keyword">include</span> time<br><br>
+                <span class="c-command">say</span> <span class="c-string">=== Привет, мир! ===</span><br>
+                <span class="c-command">green</span> Это зеленый текст<br>
+                <span class="c-command">red</span> А это красный<br><br>
+                <span class="c-comment"># Работа с функциями</span><br>
+                <span class="c-keyword">func</span> square(n)<br>
+                &nbsp;&nbsp;<span class="c-keyword">return</span> n * n<br>
+                <span class="c-keyword">end</span><br><br>
+                <span class="c-command">say</span> Квадрат 5:<br>
+                <span class="c-command">square</span> 5
+            </div>
+        </section>
+        <section>
+            <h2><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Возможности</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="icon-wrap"><svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+                    <h3>Быстрый старт</h3>
+                    <p>Работает в Termux на Android. Не требует мощного ПК или сложной настройки.</p>
+                </div>
+                <div class="card">
+                    <div class="icon-wrap"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+                    <h3>Умный парсер</h3>
+                    <p>Поддержка функций, массивов, циклов и условий. Все как у взрослых языков.</p>
+                </div>
+                <div class="card">
+                    <div class="icon-wrap"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+                    <h3>Библиотеки</h3>
+                    <p>Цветной вывод и работа с временем — из коробки. Можно добавлять свои.</p>
+                </div>
+                <div class="card">
+                    <div class="icon-wrap"><svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
+                    <h3>Открытый код</h3>
+                    <p>Полностью открыт на GitHub. Изучай, меняй, предлагай улучшения.</p>
+                </div>
+            </div>
+        </section>
+        <section>
+            <h2><svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>Установка</h2>
+            <div class="code-block">
+                <span class="c-command">git clone</span> https://github.com/Tetris445/h-lang.git<br>
+                <span class="c-command">cd</span> h-lang<br>
+                <span class="c-command">chmod</span> +x h<br>
+                <span class="c-command">./h</span> progs/hello.h
+            </div>
+        </section>
+        <footer>
+            <p>Сделано с <span style="color: #ffd700;">❤</span> в 2026 году. Проект с открытым исходным кодом.</p>
+        </footer>
+    </div>
+</body>
+</html>
