@@ -88,7 +88,7 @@ function transpile(code) {
         }
 
         // 8. Время
-        if (line === 'version') { out.push(sp() + 'hPrint("h v2.4.0");'); continue; }
+        if (line === 'version') { out.push(sp() + 'hPrint("h v2.4.1");'); continue; }
         if (line.startsWith('server ')) { const port = line.slice(7).trim(); out.push(sp() + 'const http = require("http"); const srv = http.createServer((req, res) => { res.writeHead(200, {"Content-Type": "text/plain; charset=utf-8"}); res.end("Привет от h-сервера!"); }); srv.listen(' + port + ', () => { hPrint("Сервер запущен на http://localhost:" + ' + port + '); });'); continue; }
         if (line === 'now') { out.push(sp() + 'hPrint(new Date().toLocaleString());'); continue; }
         if (line === 'year') { out.push(sp() + 'hPrint(new Date().getFullYear());'); continue; }
