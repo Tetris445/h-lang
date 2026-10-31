@@ -88,6 +88,7 @@ function transpile(code) {
         }
 
         // 8. Время
+        if (line === 'version') { out.push(sp() + 'hPrint("h v2.4.0");'); continue; }
         if (line === 'now') { out.push(sp() + 'hPrint(new Date().toLocaleString());'); continue; }
         if (line === 'year') { out.push(sp() + 'hPrint(new Date().getFullYear());'); continue; }
         if (line === 'month') { out.push(sp() + 'hPrint(new Date().getMonth() + 1);'); continue; }
@@ -107,7 +108,8 @@ function transpile(code) {
         if (line.startsWith('abs ')) { out.push(sp() + 'hPrint(Math.abs(' + line.slice(4) + '));'); continue; }
         if (line.startsWith('floor ')) { out.push(sp() + 'hPrint(Math.floor(' + line.slice(6) + '));'); continue; }
         if (line.startsWith('ceil ')) { out.push(sp() + 'hPrint(Math.ceil(' + line.slice(5) + '));'); continue; }
-        if (line.startsWith('round ')) { out.push(sp() + 'hPrint(Math.round(' + line.slice(6) + '));'); continue; }
+        if (line.startsWith('random ')) { const p = line.slice(7).split(/\s+/); out.push(sp() + 'hPrint(Math.floor(Math.random() * (' + p[1] + ' - ' + p[0] + ' + 1)) + ' + p[0] + ');'); continue; }
+            if (line.startsWith('round ')) { out.push(sp() + 'hPrint(Math.round(' + line.slice(6) + '));'); continue; }
         if (line === 'pi') { out.push(sp() + 'hPrint(Math.PI);'); continue; }
 
         // 11. Цвета
