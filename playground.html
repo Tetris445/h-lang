@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>h — Песочница</title>
+    <style>
+        /* ЗАПРЕТ ВЫДЕЛЕНИЯ */
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        /* РАЗРЕШАЕМ ВЫДЕЛЕНИЕ ТОЛЬКО В РЕДАКТОРЕ И ВЫВОДЕ */
+        #codeInput, #output {
+            -webkit-user-select: text;
+            user-select: text;
+            -webkit-touch-callout: default;
+        }
+
+        body { background: #050505; color: #e0e0e0; font-family: 'Courier New', monospace; padding: 20px; }
+        h1 { color: #00d2ff; text-align: center; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .editor { display: flex; flex-direction: column; gap: 10px; }
+        .code-editor {
+            width: 100%; height: 180px; background: #111; color: #eee;
+            border: 1px solid #333; padding: 10px; font-family: 'Courier New', monospace;
+            font-size: 16px; border-radius: 6px; overflow-y: auto;
+            white-space: pre-wrap; word-wrap: break-word;
+        }
+        .code-editor:focus { outline: 1px solid #00d2ff; }
+        .hl-keyword { color: #00d2ff; font-weight: bold; }
+        .hl-string { color: #00ff87; }
+        .hl-comment { color: #555; font-style: italic; }
+        .hl-number { color: #ff85c0; }
+        button {
+            background: #00d2ff; color: #000; border: none; padding: 12px;
+            font-size: 18px; font-weight: bold; border-radius: 6px; cursor: pointer;
+        }
+        button:hover { background: #00ff87; }
+        pre {
+            background: #0a0a0a; border: 1px solid #222; padding: 15px;
+            border-radius: 6px; min-height: 100px; white-space: pre-wrap;
+            font-size: 16px; color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Песочница h</h1>
+        <div class="editor">
+            <div id="codeInput" class="code-editor" contenteditable="true" spellcheck="false">say "Привет, мир!"
+let x = 10
+add x 5</div>
+            <button onclick="runCode()">▶ Запустить</button>
+            <pre id="output">Здесь будет результат...</pre>
+        </div>
+    </div>
+    <script src="h-browser.js"></script>
+    <script>
+        const editor = document.getElementById('codeInput');
+        const output = document.getElementById('output');
+        function highlightSyntax() {
+            let text = editor.innerText;
+            text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            text = text.replace(/(#[^\n]*)/g, '<span class="hl-comment">$1</span>');
+            text = text.replace(/("[^"]*")/g, '<span class="hl-string">$1</span>');
+            text = text.replace(/\b(\d+)\b/g, '<span class="hl-number">$1</span>');
+            const keywords = ['say', 'let', 'if', 'else', 'end', 'for', 'in', 'while', 'func', 'return', 'add', 'sub', 'mul', 'div', 'sqrt', 'pow', 'now', 'year', 'month', 'day', 'red', 'green', 'yellow', 'blue', 'input'];
+            keywords.forEach(kw => {
+                const regex = new RegExp('\\b' + kw + '\\b', 'g');
+                text = text.replace(regex, '<span class="hl-keyword">' + kw + '</span>');
+            });
+            editor.innerHTML = text + '<br>';
+            placeCaretAtEnd(editor);
+        }
+        function placeCaretAtEnd(el) {
+            el.focus();
+            if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
+                var range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                var sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+        editor.addEventListener('input', highlightSyntax);
+        function runCode() {
+            const code = editor.innerText;
+            output.textContent = '';
+            window.hPrint = (text) => { output.textContent += text + '\n'; };
+            try {
+                const jsCode = hTranspile(code);
+                new Function(jsCode)();
+            } catch (e) { output.textContent = 'Ошибка: ' + e.message; }
+        }
+    </script>
+</body>
+</html>
