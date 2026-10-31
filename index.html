@@ -9,7 +9,7 @@
         body { background: #050505; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; line-height: 1.6; overflow-x: hidden; }
         .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
         
-        .code-block, .code-block * { -webkit-tap-highlight-color: rgba(0, 210, 255, 0.2); -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+        .code-block, .code-block *, #codeInput, #output { -webkit-tap-highlight-color: rgba(0, 210, 255, 0.2); -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 
         /* Шапка */
         header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #1a1a1a; margin-bottom: 40px; }
@@ -46,6 +46,13 @@
         .c-comment { color: #555; font-style: italic; }
         .c-number { color: #ff85c0; }
 
+        /* Встроенная песочница */
+        .playground-editor { width: 100%; min-height: 120px; background: #111; color: #eee; border: 1px solid #333; padding: 15px; font-family: 'Courier New', monospace; font-size: 14px; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; outline: none; margin-bottom: 10px; }
+        .playground-editor:focus { border-color: #00d2ff; }
+        .playground-btn { width: 100%; background: #00d2ff; color: #000; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 15px; }
+        .playground-btn:hover { background: #00ff87; }
+        .playground-output { background: #0a0a0a; border: 1px solid #222; padding: 15px; border-radius: 6px; min-height: 80px; color: #fff; font-size: 14px; white-space: pre-wrap; }
+
         /* Футер */
         footer { text-align: center; padding: 40px 0; border-top: 1px solid #1a1a1a; color: #444; font-size: 14px; margin-top: 40px; }
 
@@ -68,10 +75,13 @@
         <!-- Шапка -->
         <header>
             <div class="logo">h_</div>
-            <a href="https://github.com/Tetris445/h-lang" class="btn-nav">
-                <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-                GitHub
-            </a>
+            <div style="display: flex; gap: 10px;">
+                <a href="#playground" class="btn-nav" style="border-color: #00d2ff; color: #00d2ff;">Песочница</a>
+                <a href="https://github.com/Tetris445/h-lang" class="btn-nav">
+                    <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                    GitHub
+                </a>
+            </div>
         </header>
 
         <!-- Герой -->
@@ -245,11 +255,77 @@
 <span class="c-keyword">end</span></div>
         </section>
 
+        <!-- Встроенная песочница -->
+        <section id="playground">
+            <h2>
+                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Попробуй прямо сейчас
+            </h2>
+            <p>Напиши код на h и нажми «Запустить».</p>
+            
+            <div id="codeInput" class="playground-editor" contenteditable="true" spellcheck="false">say "Привет, мир!"
+let x = 10
+add x 5</div>
+            
+            <button onclick="runCode()" class="playground-btn">▶ Запустить</button>
+            
+            <pre id="output" class="playground-output">Здесь будет результат...</pre>
+        </section>
+
         <!-- Футер -->
         <footer>
             <p>Сделано с <span style="color: #ffd700;">❤</span> в 2026 году. Проект с открытым исходным кодом.</p>
         </footer>
     </div>
 
+    <!-- Подключаем движок и скрипт для песочницы -->
+    <script src="h-browser.js"></script>
+    <script>
+        const editor = document.getElementById('codeInput');
+        const output = document.getElementById('output');
+
+        function highlightSyntax() {
+            let text = editor.innerText;
+            text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            text = text.replace(/(#[^\n]*)/g, '<span style="color:#555; font-style:italic;">$1</span>');
+            text = text.replace(/("[^"]*")/g, '<span style="color:#00ff87;">$1</span>');
+            text = text.replace(/\b(\d+)\b/g, '<span style="color:#ff85c0;">$1</span>');
+            const keywords = ['say', 'let', 'if', 'else', 'end', 'for', 'in', 'while', 'func', 'return', 'add', 'sub', 'mul', 'div', 'sqrt', 'pow', 'now', 'year', 'month', 'day', 'red', 'green', 'yellow', 'blue', 'input'];
+            keywords.forEach(kw => {
+                const regex = new RegExp('\\b' + kw + '\\b', 'g');
+                text = text.replace(regex, '<span style="color:#00d2ff; font-weight:bold;">' + kw + '</span>');
+            });
+            editor.innerHTML = text + '<br>';
+            placeCaretAtEnd(editor);
+        }
+
+        function placeCaretAtEnd(el) {
+            el.focus();
+            if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
+                var range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                var sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        }
+
+        editor.addEventListener('input', highlightSyntax);
+
+        function runCode() {
+            const code = editor.innerText;
+            output.textContent = '';
+            window.hPrint = (text) => { output.textContent += text + '\n'; };
+            try {
+                let jsCode;
+                if (typeof hTranspile === 'function') jsCode = hTranspile(code);
+                else if (typeof transpile === 'function') jsCode = transpile(code);
+                else if (typeof h === 'function') jsCode = h(code);
+                else throw new Error("Функция перевода не найдена. Проверь h-browser.js");
+                new Function(jsCode)();
+            } catch (e) { output.textContent = 'Ошибка: ' + e.message; }
+        }
+    </script>
 </body>
 </html>
