@@ -115,6 +115,7 @@ function transpile(code) {
         if (line.startsWith('yellow ')) { out.push('hPrint("\\x1b[33m" + ' + JSON.stringify(line.slice(7)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('blue ')) { out.push('hPrint("\\x1b[34m" + ' + JSON.stringify(line.slice(5)) + ' + "\\x1b[0m");'); continue; }
 
+        if (line.startsWith('let ') && line.includes('number ')) { const parts = line.slice(4).split('='); const name = parts[0].trim(); const val = parts[1].trim(); const varName = val.slice(7).trim(); out.push('var ' + name + ' = Number(' + varName + ');'); continue; }
         if (line.startsWith('let ') && line.includes('input()')) {
             const name = line.slice(4).split('=')[0].trim();
             out.push('var ' + name + ' = hRead();');
