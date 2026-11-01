@@ -4,62 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>h — Язык программирования</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23050505%22/><text x=%2250%22 y=%2270%22 font-family=%22monospace%22 font-size=%2260%22 font-weight=%22bold%22 fill=%22%2300d2ff%22 text-anchor=%22middle%22>h_</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
         body { background: #050505; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; line-height: 1.6; overflow-x: hidden; }
         .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
-        
-        .code-block, .code-block *, #codeInput, #output { -webkit-tap-highlight-color: rgba(0, 210, 255, 0.2); -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
-
-        /* Шапка */
-        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #1a1a1a; margin-bottom: 40px; }
-        .logo { font-size: 28px; font-weight: 800; color: #00d2ff; letter-spacing: -1px; }
-        .btn-nav { display: flex; align-items: center; gap: 8px; background: #111; color: #00ff87; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid #222; transition: 0.2s; }
-        .btn-nav:hover { border-color: #00ff87; }
-        .btn-nav svg { width: 16px; height: 16px; stroke: #00ff87; fill: none; stroke-width: 2; }
-
-        /* Герой */
+        .code-block, .code-block * { -webkit-tap-highlight-color: rgba(0, 210, 255, 0.2); -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #1a1a1a; margin-bottom: 40px; position: relative; z-index: 10; }
+        .logo { font-size: 28px; font-weight: 800; color: #00d2ff; letter-spacing: -1px; cursor: pointer; }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .btn-github { display: flex; align-items: center; justify-content: center; text-decoration: none; color: #00ff87; transition: 0.2s; }
+        .btn-github svg { width: 26px; height: 26px; stroke: #00ff87; fill: none; stroke-width: 2; }
+        .btn-github:hover svg { stroke: #fff; }
+        .hamburger { font-size: 30px; cursor: pointer; color: #fff; background: none; border: none; display: block; z-index: 1001; position: relative; padding: 0; }
+        .hamburger svg { width: 32px; height: 32px; stroke: #fff; fill: none; stroke-width: 2; }
+        .side-menu { position: fixed; top: 0; right: -300px; width: 280px; height: 100vh; background: #0a0a0a; border-left: 1px solid #222; padding: 30px 20px; transition: right 0.3s ease; z-index: 1000; display: flex; flex-direction: column; box-shadow: -5px 0 20px rgba(0,0,0,0.5); }
+        .side-menu.active { right: 0; }
+        .side-menu-header { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+        .close-btn { font-size: 30px; cursor: pointer; color: #fff; background: none; border: none; }
+        .side-menu a { display: flex; align-items: center; gap: 15px; color: #00ff87; text-decoration: none; font-size: 20px; font-weight: 600; padding: 15px 10px; border-radius: 8px; transition: 0.2s; cursor: pointer; }
+        .side-menu a:hover { background: #111; }
+        .side-menu a svg { width: 24px; height: 24px; stroke: #00ff87; fill: none; stroke-width: 2; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 999; display: none; }
+        .overlay.active { display: block; }
         .hero { text-align: center; margin-bottom: 60px; }
         .hero h1 { font-size: 64px; font-weight: 900; letter-spacing: -2px; color: #fff; margin-bottom: 20px; text-shadow: 0 0 20px rgba(0, 210, 255, 0.3); }
         .hero h1 span { color: #ffd700; }
         .hero p { font-size: 18px; color: #888; max-width: 600px; margin: 0 auto 30px; }
-        
         .btn-main { display: inline-flex; align-items: center; gap: 10px; background: #00d2ff; color: #000; padding: 16px 40px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: 800; box-shadow: 0 0 30px rgba(0, 210, 255, 0.4); transition: 0.3s; }
         .btn-main:hover { background: #00ff87; box-shadow: 0 0 40px rgba(0, 255, 135, 0.6); }
         .btn-main svg { width: 20px; height: 20px; stroke: #000; fill: none; stroke-width: 2; }
-
-        /* Секции документации */
+        .docs-container { display: none; animation: fadeIn 0.5s ease; }
+        .docs-container.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         section { margin-bottom: 50px; background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 24px; }
         section:hover { border-color: #333; }
         h2 { font-size: 24px; font-weight: 700; color: #00d2ff; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #1a1a1a; padding-bottom: 10px; }
         h2 svg { width: 24px; height: 24px; stroke: #00d2ff; fill: none; stroke-width: 2; }
-        
         h3 { font-size: 18px; color: #ffd700; margin: 20px 0 10px 0; }
         p { color: #aaa; margin-bottom: 15px; font-size: 15px; }
         code { background: #1a1a1a; color: #00ff87; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
-
-        /* Блоки кода */
         .code-block { background: #111; border-left: 4px solid #00d2ff; border-radius: 0 8px 8px 0; padding: 15px; overflow-x: auto; white-space: pre; font-size: 14px; line-height: 1.5; margin-bottom: 15px; color: #eee; }
         .c-keyword { color: #00d2ff; font-weight: bold; }
         .c-string { color: #00ff87; }
         .c-command { color: #ffd700; }
         .c-comment { color: #555; font-style: italic; }
         .c-number { color: #ff85c0; }
-
-        /* Встроенная песочница */
-        .playground-editor { width: 100%; min-height: 120px; background: #111; color: #eee; border: 1px solid #333; padding: 15px; font-family: 'Courier New', monospace; font-size: 14px; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; outline: none; margin-bottom: 10px; }
-        .playground-editor:focus { border-color: #00d2ff; }
-        .playground-btn { width: 100%; background: #00d2ff; color: #000; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 15px; }
-        .playground-btn:hover { background: #00ff87; }
-        .playground-output { background: #0a0a0a; border: 1px solid #222; padding: 15px; border-radius: 6px; min-height: 80px; color: #fff; font-size: 14px; white-space: pre-wrap; }
-
-        /* Футер */
+        .bad-example { border-left-color: #ff5555; }
+        .bad-example code { color: #ff5555; }
+        .good-example { border-left-color: #00ff87; }
         footer { text-align: center; padding: 40px 0; border-top: 1px solid #1a1a1a; color: #444; font-size: 14px; margin-top: 40px; }
-
-        /* Мобильная адаптация */
         @media (max-width: 768px) {
-            header { flex-direction: row; justify-content: space-between; align-items: center; padding: 15px 0; margin-bottom: 40px; }
-            .logo { font-size: 24px; }
             .hero h1 { font-size: 42px; }
             .hero p { font-size: 15px; }
             .btn-main { padding: 14px 20px; font-size: 16px; width: 100%; justify-content: center; }
@@ -70,180 +65,175 @@
     </style>
 </head>
 <body>
-
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+    <div class="side-menu" id="sideMenu">
+        <div class="side-menu-header">
+            <button class="close-btn" onclick="toggleMenu()">×</button>
+        </div>
+        <a onclick="openDocs()">
+            <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Документация
+        </a>
+    </div>
     <div class="container">
-        <!-- Шапка -->
         <header>
-            <div class="logo">h_</div>
-            <div style="display: flex; gap: 10px;">
-                <a href="#playground" class="btn-nav" style="border-color: #00d2ff; color: #00d2ff;">Песочница</a>
-                <a href="https://github.com/Tetris445/h-lang" class="btn-nav">
+            <div class="logo" onclick="closeDocs()">h_</div>
+            <div class="header-right">
+                <a href="https://github.com/Tetris445/h-lang/releases" class="btn-github" title="GitHub">
                     <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-                    GitHub
                 </a>
+                <button class="hamburger" onclick="toggleMenu()">
+                    <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
             </div>
         </header>
-
-        <!-- Герой -->
-        <div class="hero">
-            <h1>Язык <span>h</span></h1>
-            <p>Легкий, быстрый и открытый язык программирования для Termux и Android. Всё, что нужно знать — в одной шпаргалке.</p>
-            <a href="https://github.com/Tetris445/h-lang/releases" class="btn-main">
-                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Скачать приложение
-            </a>
+        <div id="main-screen">
+            <div class="hero">
+                <h1>Язык <span>h</span></h1>
+                <p>Легкий, быстрый и открытый язык программирования для Termux и Android. Всё, что нужно знать — в одной шпаргалке.</p>
+                <a href="https://github.com/Tetris445/h-lang/releases" class="btn-main">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Скачать приложение
+                </a>
+            </div>
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    Быстрый старт
+                </h2>
+                <p>Попробуй написать первую программу. Создай файл <code>hello.h</code> и запусти:</p>
+                <div class="code-block"><span class="c-command">say</span> <span class="c-string">Привет, мир!</span></div>
+                <p style="font-size: 14px; color: #888;">Нажми на ☰ в правом верхнем углу, чтобы открыть полную документацию.</p>
+            </section>
         </div>
-
-        <!-- Основы -->
-        <section>
-            <h2>
-                <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                Основы и вывод
-            </h2>
-            <p>Всё начинается с команды <code>say</code>. Она выводит текст на экран.</p>
-            <div class="code-block"><span class="c-command">say</span> <span class="c-string">Привет, мир!</span>
+        <div id="docs-container" class="docs-container">
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    Основы и вывод
+                </h2>
+                <p>Всё начинается с команды <code>say</code>. Она выводит текст на экран.</p>
+                <div class="code-block good-example"><span class="c-command">say</span> <span class="c-string">Привет, мир!</span>
 <span class="c-comment"># Если нужно вывести переменную, просто напиши её имя:</span>
 <span class="c-keyword">let</span> name = Вася
 <span class="c-command">say</span> name</div>
-
-            <h3>Цветной вывод</h3>
-            <p>Можно красить текст прямо в терминале. Доступно 4 цвета:</p>
-            <div class="code-block"><span class="c-command">red</span> Ошибка!
+                <p style="color: #ff5555; font-size: 14px;">❌ Неправильно: say("Привет") - не ставь скобки и кавычки без надобности.</p>
+                <h3>Цветной вывод</h3>
+                <p>Можно красить текст прямо в терминале. Доступно 4 цвета:</p>
+                <div class="code-block"><span class="c-command">red</span> Ошибка!
 <span class="c-command">green</span> Успех!
 <span class="c-command">yellow</span> Внимание!
 <span class="c-command">blue</span> Информация</div>
-        </section>
-
-        <!-- Математика -->
-        <section>
-            <h2>
-                <svg viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
-                Математика
-            </h2>
-            <p>Базовые операции и математические функции.</p>
-            <div class="code-block"><span class="c-comment"># Арифметика</span>
+            </section>
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+                    Математика
+                </h2>
+                <p>Базовые операции и математические функции.</p>
+                <div class="code-block"><span class="c-comment"># Арифметика</span>
 <span class="c-command">add</span> 10 5      <span class="c-comment"># Сложение (15)</span>
 <span class="c-command">sub</span> 10 5      <span class="c-comment"># Вычитание (5)</span>
 <span class="c-command">mul</span> 10 5      <span class="c-comment"># Умножение (50)</span>
 <span class="c-command">div</span> 10 5      <span class="c-comment"># Деление (2)</span>
-
 <span class="c-comment"># Математические функции</span>
 <span class="c-command">sqrt</span> 25       <span class="c-comment"># Квадратный корень (5)</span>
 <span class="c-command">pow</span> 2 3       <span class="c-comment"># Возведение в степень (8)</span>
 <span class="c-command">abs</span> -5        <span class="c-comment"># Модуль (5)</span>
 <span class="c-command">round</span> 3.7     <span class="c-comment"># Округление (4)</span>
 <span class="c-command">pi</span>            <span class="c-comment"># Число Пи (3.1415...)</span></div>
-        </section>
-
-        <!-- Переменные и ввод -->
-        <section>
-            <h2>
-                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                Переменные и ввод
-            </h2>
-            <p>Переменные создаются через <code>let</code>. А чтобы спросить что-то у пользователя, используется <code>input()</code>.</p>
-            <div class="code-block"><span class="c-keyword">let</span> x = <span class="c-number">10</span>
+            </section>
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Переменные и ввод
+                </h2>
+                <p>Переменные создаются через <code>let</code>. А чтобы спросить что-то у пользователя, используется <code>input()</code>.</p>
+                <div class="code-block good-example"><span class="c-keyword">let</span> x = <span class="c-number">10</span>
 <span class="c-keyword">let</span> name = Вася
-
-<span class="c-comment"># Ввод с клавиатуры</span>
-<span class="c-keyword">let</span> answer = <span class="c-command">input()</span>
-<span class="c-comment"># Превратить текст в число</span>
-<span class="c-keyword">let</span> num = <span class="c-command">number</span> answer</div>
-        </section>
-
-        <!-- Условия -->
-        <section>
-            <h2>
-                <svg viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
-                Условия (if/else)
-            </h2>
-            <p>Позволяют выполнять код только при определенных условиях.</p>
-            <div class="code-block"><span class="c-keyword">let</span> x = <span class="c-number">10</span>
+<span class="c-comment"># Ввод с клавиатуры (скобки обязательны!)</span>
+<span class="c-keyword">let</span> answer = <span class="c-command">input()</span></div>
+                <p style="color: #ff5555; font-size: 14px;">❌ Неправильно: let x = input (без скобок).</p>
+            </section>
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                    Условия (if/else)
+                </h2>
+                <p>Позволяют выполнять код только при определенных условиях.</p>
+                <div class="code-block good-example"><span class="c-keyword">let</span> x = <span class="c-number">10</span>
 <span class="c-keyword">if</span> x &gt; 5
     <span class="c-command">say</span> x больше пяти
 <span class="c-keyword">else</span>
     <span class="c-command">say</span> x меньше или равно пяти
 <span class="c-keyword">end</span></div>
-        </section>
-
-        <!-- Циклы -->
-        <section>
-            <h2>
-                <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-                Циклы (for / while)
-            </h2>
-            <p>Повторяют код несколько раз. <code>for</code> работает с диапазоном чисел.</p>
-            <div class="code-block"><span class="c-comment"># Цикл for (от 1 до 3)</span>
+                <p style="color: #ff5555; font-size: 14px;">❌ Неправильно: if (x > 5) { ... } - не используй фигурные скобки, только слово end!</p>
+            </section>
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                    Циклы (for / while)
+                </h2>
+                <p>Повторяют код несколько раз. <code>for</code> работает с диапазоном чисел.</p>
+                <div class="code-block good-example"><span class="c-comment"># Цикл for (от 1 до 3)</span>
 <span class="c-keyword">for</span> i <span class="c-keyword">in</span> 1 3
     <span class="c-command">add</span> i 0  <span class="c-comment"># Выведет 1, 2, 3</span>
 <span class="c-keyword">end</span>
-
 <span class="c-comment"># Цикл while (пока x меньше 5)</span>
 <span class="c-keyword">let</span> x = 0
 <span class="c-keyword">while</span> x &lt; 5
     <span class="c-command">add</span> x 0
     <span class="c-keyword">let</span> x = <span class="c-command">add</span> x 1
 <span class="c-keyword">end</span></div>
-        </section>
-
-        <!-- Массивы -->
-        <section>
-            <h2>
-                <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                Массивы
-            </h2>
-            <p>Списки данных, доступ к которым идет по индексу (начиная с 0).</p>
-            <div class="code-block"><span class="c-keyword">let</span> nums = [<span class="c-number">10</span>, <span class="c-number">20</span>, <span class="c-number">30</span>]
+            </section>
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    Массивы
+                </h2>
+                <p>Списки данных, доступ к которым идет по индексу (начиная с 0).</p>
+                <div class="code-block"><span class="c-keyword">let</span> nums = [<span class="c-number">10</span>, <span class="c-number">20</span>, <span class="c-number">30</span>]
 <span class="c-command">say</span> nums[0]   <span class="c-comment"># Выведет 10</span>
 <span class="c-command">say</span> nums[2]   <span class="c-comment"># Выведет 30</span></div>
-        </section>
-
-        <!-- Функции -->
-        <section>
-            <h2>
-                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                Функции
-            </h2>
-            <p>Позволяют вынести повторяющийся код в отдельный блок.</p>
-            <div class="code-block"><span class="c-keyword">func</span> square(n)
+            </section>
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Функции
+                </h2>
+                <p>Позволяют вынести повторяющийся код в отдельный блок.</p>
+                <div class="code-block"><span class="c-keyword">func</span> square(n)
     <span class="c-keyword">return</span> n * n
 <span class="c-keyword">end</span>
-
 <span class="c-comment"># Вызов функции (без скобок)</span>
 <span class="c-command">square</span> 5</div>
-        </section>
-
-        <!-- Время и приложение -->
-        <section>
-            <h2>
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Время и фичи Android
-            </h2>
-            <p>В языке есть встроенные команды для работы со временем и управлением телефоном (в приложении).</p>
-            <div class="code-block"><span class="c-comment"># Время</span>
+            </section>
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Время и фичи Android
+                </h2>
+                <p>В языке есть встроенные команды для работы со временем и управлением телефоном (в приложении).</p>
+                <div class="code-block"><span class="c-comment"># Время</span>
 <span class="c-command">now</span>     <span class="c-comment"># Текущая дата и время</span>
 <span class="c-command">year</span>    <span class="c-comment"># Год</span>
 <span class="c-command">month</span>   <span class="c-comment"># Месяц</span>
 <span class="c-command">day</span>     <span class="c-comment"># День</span>
-
 <span class="c-comment"># Управление телефоном (в приложении)</span>
 <span class="c-command">vibrate</span> 1000  <span class="c-comment"># Вибрация (в миллисекундах)</span>
 <span class="c-command">flash</span> on    <span class="c-comment"># Включить фонарик</span>
 <span class="c-command">notify</span> Привет  <span class="c-comment"># Показать уведомление</span></div>
-        </section>
-
-        <!-- Полный пример -->
-        <section>
-            <h2>
-                <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                Пример: Угадай число
-            </h2>
-            <p>Вот как выглядит полноценная игра на языке <code>h</code>:</p>
-            <div class="code-block"><span class="c-keyword">let</span> secret = <span class="c-number">42</span>
+            </section>
+            <section>
+                <h2>
+                    <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Пример: Угадай число
+                </h2>
+                <p>Вот как выглядит полноценная игра на языке <code>h</code>:</p>
+                <div class="code-block"><span class="c-keyword">let</span> secret = <span class="c-number">42</span>
 <span class="c-command">say</span> <span class="c-string">"Угадай число от 1 до 100:"</span>
 <span class="c-keyword">let</span> guess = <span class="c-command">input()</span>
 <span class="c-keyword">let</span> g = <span class="c-command">number</span> guess
-
 <span class="c-keyword">if</span> g == secret
     <span class="c-command">say</span> <span class="c-string">"Угадал!"</span>
 <span class="c-keyword">end</span>
@@ -253,78 +243,32 @@
 <span class="c-keyword">if</span> g &gt; secret
     <span class="c-command">say</span> <span class="c-string">"Много"</span>
 <span class="c-keyword">end</span></div>
-        </section>
-
-        <!-- Встроенная песочница -->
-        <section id="playground">
-            <h2>
-                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                Попробуй прямо сейчас
-            </h2>
-            <p>Напиши код на h и нажми «Запустить».</p>
-            
-            <div id="codeInput" class="playground-editor" contenteditable="true" spellcheck="false">say "Привет, мир!"
-let x = 10
-add x 5</div>
-            
-            <button onclick="runCode()" class="playground-btn">▶ Запустить</button>
-            
-            <pre id="output" class="playground-output">Здесь будет результат...</pre>
-        </section>
-
-        <!-- Футер -->
+            </section>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="closeDocs()" style="background: #111; color: #00ff87; border: 1px solid #333; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">← Вернуться на главную</button>
+            </div>
+        </div>
         <footer>
             <p>Сделано с <span style="color: #ffd700;">❤</span> в 2026 году. Проект с открытым исходным кодом.</p>
         </footer>
     </div>
-
-    <!-- Подключаем движок и скрипт для песочницы -->
-    <script src="h-browser.js"></script>
     <script>
-        const editor = document.getElementById('codeInput');
-        const output = document.getElementById('output');
-
-        function highlightSyntax() {
-            let text = editor.innerText;
-            text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            text = text.replace(/(#[^\n]*)/g, '<span style="color:#555; font-style:italic;">$1</span>');
-            text = text.replace(/("[^"]*")/g, '<span style="color:#00ff87;">$1</span>');
-            text = text.replace(/\b(\d+)\b/g, '<span style="color:#ff85c0;">$1</span>');
-            const keywords = ['say', 'let', 'if', 'else', 'end', 'for', 'in', 'while', 'func', 'return', 'add', 'sub', 'mul', 'div', 'sqrt', 'pow', 'now', 'year', 'month', 'day', 'red', 'green', 'yellow', 'blue', 'input'];
-            keywords.forEach(kw => {
-                const regex = new RegExp('\\b' + kw + '\\b', 'g');
-                text = text.replace(regex, '<span style="color:#00d2ff; font-weight:bold;">' + kw + '</span>');
-            });
-            editor.innerHTML = text + '<br>';
-            placeCaretAtEnd(editor);
+        function toggleMenu() {
+            const menu = document.getElementById('sideMenu');
+            const overlay = document.getElementById('overlay');
+            menu.classList.toggle('active');
+            overlay.classList.toggle('active');
         }
-
-        function placeCaretAtEnd(el) {
-            el.focus();
-            if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
-                var range = document.createRange();
-                range.selectNodeContents(el);
-                range.collapse(false);
-                var sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
+        function openDocs() {
+            toggleMenu();
+            document.getElementById('main-screen').style.display = 'none';
+            document.getElementById('docs-container').classList.add('active');
+            window.scrollTo(0, 0);
         }
-
-        editor.addEventListener('input', highlightSyntax);
-
-        function runCode() {
-            const code = editor.innerText;
-            output.textContent = '';
-            window.hPrint = (text) => { output.textContent += text + '\n'; };
-            try {
-                let jsCode;
-                if (typeof hTranspile === 'function') jsCode = hTranspile(code);
-                else if (typeof transpile === 'function') jsCode = transpile(code);
-                else if (typeof h === 'function') jsCode = h(code);
-                else throw new Error("Функция перевода не найдена. Проверь h-browser.js");
-                new Function(jsCode)();
-            } catch (e) { output.textContent = 'Ошибка: ' + e.message; }
+        function closeDocs() {
+            document.getElementById('docs-container').classList.remove('active');
+            document.getElementById('main-screen').style.display = 'block';
+            window.scrollTo(0, 0);
         }
     </script>
 </body>
