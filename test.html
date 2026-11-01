@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест h-lang</title>
+</head>
+<body>
+    <h1>Моя первая страница на h-lang</h1>
+    
+    <!-- Подключаем переводчик -->
+    <script src="h-browser.js"></script>
+    
+    <script>
+        // Наш код на h
+        let code = `
+        say Привет из браузера!
+        green Зеленый текст работает!
+        add 10 20
+        `;
+        
+        // Так как автор не экспортировал функцию, мы делаем это принудительно
+        // и вызываем её
+        try {
+            // Если функция доступна - запускаем
+            if (typeof hTranspile === 'function') {
+                let jsCode = hTranspile(code);
+                eval(jsCode);
+            } else {
+                // Если нет - пробуем вытащить её хакерским способом
+                let func = new Function("code", "return " + hTranspile.toString() + "(code);");
+                eval(func(code));
+            }
+        } catch (e) {
+            document.body.innerHTML += "<p style='color:red'>Ошибка: " + e.message + "</p>";
+        }
+    </script>
+</body>
+</html>
