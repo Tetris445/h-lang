@@ -35,6 +35,10 @@ function transpile(code) {
 
         // МАССИВЫ
         if (line.startsWith('let ') && line.includes('[') && line.includes(']')) {
+            const match = line.match(/let\s+(\w+)\s*=\s*(\[.*\])/);
+            if (match) { out.push('var ' + match[1] + ' = ' + match[2] + ';'); continue; }
+        }
+        if (false) {
             const match = line.match(/let\s+(\w+)\s*=\s*\[(.*?)\]/);
             if (match) { out.push('var ' + match[1] + ' = [' + match[2] + '];'); continue; }
         }
@@ -156,7 +160,7 @@ function transpile(code) {
     return out.join('\n');
 }
 
-function hPrint(text) { console.log(text); }
+function hPrint(text) { if (text !== undefined) console.log(text); }
 function hRead() {
     try {
         const buf = Buffer.alloc(1024);
