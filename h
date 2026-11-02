@@ -23,43 +23,9 @@ function transpile(code) {
 
     for (let raw of lines) {
         let line = raw.trim();
-        if (!line || line.startsWith('#')) continue;
+        if (line.length === 0 || line.startsWith('#')) continue;
 
-        // 0. ОБРАБОТКА СКОБОК (самая первая)
-        if (line.includes('(') && line.includes(')')) {
-            const inner = line.match(/\((.*?)\)/);
-            if (inner) {
-                const innerCmd = inner[1].trim();
-                const outer = line.replace(inner[0], 'RESULT').trim();
-                // Считаем внутреннее
-                let innerJs = '';
-                if (innerCmd.startsWith('add ')) innerJs = innerCmd.slice(4).split(/\s+/).join(' + ');
-                else if (innerCmd.startsWith('mul ')) innerJs = innerCmd.slice(4).split(/\s+/).join(' * ');
-                else if (innerCmd.startsWith('sub ')) innerJs = innerCmd.slice(4).split(/\s+/).join(' - ');
-                else if (innerCmd.startsWith('div ')) innerJs = innerCmd.slice(4).split(/\s+/).join(' / ');
-                else innerJs = innerCmd;
-                out.push('var RESULT = ' + innerJs + ';');
-                // Выполняем внешнее
-                if (outer.startsWith('add ')) { const p = outer.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' + ' + p[1] + ');'); }
-                else if (outer.startsWith('mul ')) { const p = outer.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' * ' + p[1] + ');'); }
-                else { out.push('hPrint(' + outer + ');'); }
-                continue;
-            }
-        }
-
-        // 1. INCLUDE
-        if (line.startsWith('include ')) {
-            const libName = line.slice(8).trim();
-            const lib = loadLibrary(libName);
-            if (lib) { for (const cmd of Object.keys(lib)) commands[cmd] = lib[cmd]; }
-            continue;
-        }
-
-        // 2. МАССИВЫ
-        if (line.startsWith('let ') && line.includes('[') && line.includes(']')) {
-            const match = line.match(/let\s+(\w+)\s*=\s*(\[.*\])/);
-            if (match) { out.push('var ' + match[1] + ' = ' + match[2] + ';'); continue; }
-        }
+        
 
         // 3. ЧТЕНИЕ МАССИВА
         if (line.includes('[') && line.includes(']') && !line.startsWith('let ')) {
@@ -88,25 +54,18 @@ function transpile(code) {
             const match = line.match(/for\s+(\w+)\s+in\s+(\d+)\s+(\d+)/);
             if (match) { out.push('for (var ' + match[1] + ' = ' + match[2] + '; ' + match[1] + ' <= ' + match[3] + '; ' + match[1] + '++) {'); continue; }
         }
-        if (line.startsWith('while ')) {
-            out.push('while (' + line.slice(6) + ') {');
-            continue;
-        }
+        if (line.startsWith('while ')) { out.push('while (' + line.slice(6) + ') {'); continue; }
 
         // 7. ВЫВОД
         if (line.startsWith('say ')) {
             let content = line.slice(4).trim();
-            if (commands[content]) {
-                out.push('hPrint(commands["' + content + '"]());');
-            } else {
+            if (commands[content]) { out.push('hPrint(commands["' + content + '"]());'); }
+            else {
                 const isVar = /^[a-zA-Z_]\w*$/.test(content);
                 const isNum = !isNaN(parseFloat(content)) && isFinite(content);
                 const isStr = content.startsWith('"') || content.startsWith("'");
-                if (isVar || isNum || isStr) {
-                    out.push('hPrint(' + content + ');');
-                } else {
-                    out.push('hPrint("' + content.replace(/"/g, '\\"') + '");');
-                }
+                if (isVar || isNum || isStr) out.push('hPrint(' + content + ');');
+                else out.push('hPrint("' + content.replace(/"/g, '\\"') + '");');
             }
             continue;
         }
@@ -117,10 +76,20 @@ function transpile(code) {
         if (line === 'month') { out.push('hPrint(new Date().getMonth() + 1);'); continue; }
         if (line === 'day') { out.push('hPrint(new Date().getDate());'); continue; }
 
-        // 8. АРИФМЕТИКА (с поддержкой скобок мы уже разобрались, а вложенность без скобок оставим как было)
-        if (line.startsWith('add ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' + ' + p[1] + ');'); continue; }
+        // 8. ВЛОЖЕННАЯ МАТЕМАТИКА
+        if (line.startsWith('add ')) {
+            let rest = line.slice(4);
+            if (rest.includes('mul ')) { const p = rest.split(/\s+/); out.push('hPrint(' + p[0] + ' + (' + p[2] + ' * ' + p[3] + '));'); continue; }
+            if (rest.includes('add ')) { const p = rest.split(/\s+/); out.push('hPrint(' + p[0] + ' + (' + p[2] + ' + ' + p[3] + '));'); continue; }
+            out.push('hPrint(' + rest.split(/\s+/)[0] + ' + ' + rest.split(/\s+/)[1] + ');'); continue;
+        }
+        if (line.startsWith('mul ')) {
+            let rest = line.slice(4);
+            if (rest.includes('add ')) { const p = rest.split(/\s+/); out.push('hPrint(' + p[0] + ' * (' + p[2] + ' + ' + p[3] + '));'); continue; }
+            if (rest.includes('mul ')) { const p = rest.split(/\s+/); out.push('hPrint(' + p[0] + ' * (' + p[2] + ' * ' + p[3] + '));'); continue; }
+            out.push('hPrint(' + rest.split(/\s+/)[0] + ' * ' + rest.split(/\s+/)[1] + ');'); continue;
+        }
         if (line.startsWith('sub ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' - ' + p[1] + ');'); continue; }
-        if (line.startsWith('mul ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' * ' + p[1] + ');'); continue; }
         if (line.startsWith('div ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' / ' + p[1] + ');'); continue; }
 
         // 9. МАТЕМАТИКА
@@ -150,23 +119,9 @@ function transpile(code) {
         // 12. ПЕРЕМЕННЫЕ
         if (line.startsWith('let ')) {
             let rest = line.slice(4);
-            if (rest.includes('input()')) {
-                const name = rest.split('=')[0].trim();
-                out.push('var ' + name + ' = hRead();');
-                continue;
-            }
-            if (rest.includes('number ')) {
-                const parts = rest.split('=');
-                const name = parts[0].trim();
-                const val = parts[1].trim();
-                const varName = val.slice(7).trim();
-                out.push('var ' + name + ' = Number(' + varName + ');');
-                continue;
-            }
-            rest = rest.replace(/add\s+(\w+)\s+(\w+)/g, '$1 + $2')
-                       .replace(/sub\s+(\w+)\s+(\w+)/g, '$1 - $2')
-                       .replace(/mul\s+(\w+)\s+(\w+)/g, '$1 * $2')
-                       .replace(/div\s+(\w+)\s+(\w+)/g, '$1 / $2');
+            if (rest.includes('input()')) { const name = rest.split('=')[0].trim(); out.push('var ' + name + ' = hRead();'); continue; }
+            if (rest.includes('number ')) { const parts = rest.split('='); const name = parts[0].trim(); const val = parts[1].trim(); const varName = val.slice(7).trim(); out.push('var ' + name + ' = Number(' + varName + ');'); continue; }
+            rest = rest.replace(/add\s+(\w+)\s+(\w+)/g, '$1 + $2').replace(/sub\s+(\w+)\s+(\w+)/g, '$1 - $2').replace(/mul\s+(\w+)\s+(\w+)/g, '$1 * $2').replace(/div\s+(\w+)\s+(\w+)/g, '$1 / $2');
             out.push('var ' + rest + ';');
             continue;
         }
