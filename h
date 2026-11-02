@@ -73,7 +73,6 @@ function transpile(code) {
         }
 
         // 7. ВЫВОД
-        if (commands[line.split(/\s+/)[0]]) { const cmd = line.split(/\s+/)[0]; const args = line.split(/\s+/).slice(1).join(', '); out.push('hPrint(commands["' + cmd + '"](' + args + '));'); continue; }
         if (line.startsWith('say ')) {
             let content = line.slice(4).trim();
             if (commands[content]) {
@@ -98,11 +97,11 @@ function transpile(code) {
         if (line === 'day') { out.push('hPrint(new Date().getDate());'); continue; }
 
         // 8. МАТЕМАТИКА
-        if (line.startsWith('random ')) { const p = line.slice(7).split(/\s+/); out.push('hPrint(Math.floor(Math.random() * (' + p[1] + ' - ' + p[0] + ' + 1)) + ' + p[0] + ');'); continue; }
         if (line.startsWith('add ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' + ' + p[1] + ');'); continue; }
         if (line.startsWith('sub ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' - ' + p[1] + ');'); continue; }
         if (line.startsWith('mul ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' * ' + p[1] + ');'); continue; }
         if (line.startsWith('div ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' / ' + p[1] + ');'); continue; }
+        if (line.startsWith('random ')) { const p = line.slice(7).split(/\s+/); out.push('hPrint(Math.floor(Math.random() * (' + p[1] + ' - ' + p[0] + ' + 1)) + ' + p[0] + ');'); continue; }
 
         // 9. ЦВЕТА
         if (line.startsWith('red ')) { out.push('hPrint("\\x1b[31m" + ' + JSON.stringify(line.slice(4)) + ' + "\\x1b[0m");'); continue; }
@@ -110,7 +109,7 @@ function transpile(code) {
         if (line.startsWith('yellow ')) { out.push('hPrint("\\x1b[33m" + ' + JSON.stringify(line.slice(7)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('blue ')) { out.push('hPrint("\\x1b[34m" + ' + JSON.stringify(line.slice(5)) + ' + "\\x1b[0m");'); continue; }
 
-        // 10. ПЕРЕМЕННЫЕ (Включая random)
+        // 10. ПЕРЕМЕННЫЕ
         if (line.startsWith('let ')) {
             let rest = line.slice(4);
             if (rest.includes('input()')) {
@@ -151,13 +150,6 @@ function transpile(code) {
         if (line.startsWith('fast ')) {
             const cmd = line.slice(5).trim();
             out.push('try { const res = require("child_process").execSync("./h2c -c ' + JSON.stringify(cmd) + '").toString(); process.stdout.write(res); } catch(e) { console.log("C Error: " + e.message); }');
-            continue;
-        }
-
-        // 13. ВЫЗОВ PYTHON
-        if (line.startsWith('py ')) {
-            const cmd = line.slice(3).trim();
-            out.push('try { const res = require("child_process").execSync("python3 -c ' + JSON.stringify(cmd) + '").toString(); process.stdout.write(res); } catch(e) { console.log("Python Error: " + e.message); }');
             continue;
         }
 
