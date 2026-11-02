@@ -67,11 +67,13 @@ function transpile(code) {
             if (match) { out.push('for (var ' + match[1] + ' = ' + match[2] + '; ' + match[1] + ' <= ' + match[3] + '; ' + match[1] + '++) {'); continue; }
         }
         if (line.startsWith('while ')) {
-            out.push('while (' + line.slice(6) + ') {');
+            let cond = line.slice(6).replace(/ and /g, ' && ').replace(/ or /g, ' || ');
+            out.push('while (' + cond + ') {');
             continue;
         }
 
         // 7. ВЫВОД
+        if (commands[line.split(/\s+/)[0]]) { const cmd = line.split(/\s+/)[0]; const args = line.split(/\s+/).slice(1).join(', '); out.push('hPrint(commands["' + cmd + '"](' + args + '));'); continue; }
         if (line.startsWith('say ')) {
             let content = line.slice(4).trim();
             if (commands[content]) {
@@ -108,7 +110,7 @@ function transpile(code) {
         if (line.startsWith('yellow ')) { out.push('hPrint("\\x1b[33m" + ' + JSON.stringify(line.slice(7)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('blue ')) { out.push('hPrint("\\x1b[34m" + ' + JSON.stringify(line.slice(5)) + ' + "\\x1b[0m");'); continue; }
 
-        // 10. ПЕРЕМЕННЫЕ
+        // 10. ПЕРЕМЕННЫЕ (Включая random)
         if (line.startsWith('let ')) {
             let rest = line.slice(4);
             if (rest.includes('input()')) {
@@ -124,6 +126,14 @@ function transpile(code) {
                 out.push('var ' + name + ' = Number(' + varName + ');');
                 continue;
             }
+            if (rest.includes('random ')) {
+                const parts = rest.split('=');
+                const name = parts[0].trim();
+                const val = parts[1].trim();
+                const args = val.slice(7).split(/\s+/);
+                out.push('var ' + name + ' = Math.floor(Math.random() * (' + args[1] + ' - ' + args[0] + ' + 1)) + ' + args[0] + ';');
+                continue;
+            }
             rest = rest.replace(/add\s+(\w+)\s+(\w+)/g, '$1 + $2')
                        .replace(/sub\s+(\w+)\s+(\w+)/g, '$1 - $2')
                        .replace(/mul\s+(\w+)\s+(\w+)/g, '$1 * $2')
@@ -137,14 +147,14 @@ function transpile(code) {
         if (line === 'else') { out.push('} else {'); continue; }
         if (line === 'end') { out.push('}'); continue; }
 
-        // 12. ВЫЗОВ C (fast)
+        // 12. ВЫЗОВ C
         if (line.startsWith('fast ')) {
             const cmd = line.slice(5).trim();
             out.push('try { const res = require("child_process").execSync("./h2c -c ' + JSON.stringify(cmd) + '").toString(); process.stdout.write(res); } catch(e) { console.log("C Error: " + e.message); }');
             continue;
         }
 
-        // 13. ВЫЗОВ PYTHON (py)
+        // 13. ВЫЗОВ PYTHON
         if (line.startsWith('py ')) {
             const cmd = line.slice(3).trim();
             out.push('try { const res = require("child_process").execSync("python3 -c ' + JSON.stringify(cmd) + '").toString(); process.stdout.write(res); } catch(e) { console.log("Python Error: " + e.message); }');
