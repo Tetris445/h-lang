@@ -152,7 +152,7 @@ function transpile(code) {
         }
 
         // ЛОГИКА
-        if (line.startsWith('if ')) { out.push('if (' + line.slice(3) + ') {'); continue; }
+        if (line.startsWith('if ')) { let cond = line.slice(3).replace(/ and /g, ' && ').replace(/ or /g, ' || '); out.push('if (' + cond + ') {'); continue; }
         if (line === 'else') { out.push('} else {'); continue; }
         if (line === 'end') { out.push('}'); continue; }
 
