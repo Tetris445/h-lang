@@ -12,6 +12,10 @@ int main(int argc, char *argv[]) {
     int vars[100];
     char var_names[100][50];
     int var_count = 0;
+    int arrays[100][20];
+    int array_sizes[100];
+    char array_names[100][50];
+    int array_count = 0;
     int skip_to_end = 0;
 
     while (fgets(line, sizeof(line), file)) {
@@ -23,8 +27,63 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // ВЛОЖЕННАЯ МАТЕМАТИКА
+        if (strncmp(line, "mul add ", 8) == 0) {
+            int a, b, c;
+            if (sscanf(line + 8, "%d %d %d", &a, &b, &c) == 3) {
+                printf("%d\n", a * (b + c));
+            }
+            continue;
+        }
+        if (strncmp(line, "add mul ", 8) == 0) {
+            int a, b, c;
+            if (sscanf(line + 8, "%d %d %d", &a, &b, &c) == 3) {
+                printf("%d\n", a + (b * c));
+            }
+            continue;
+        }
+
+        // IF
+        if (strncmp(line, "if ", 3) == 0) {
+            char a[50], op[5], b[50];
+            if (sscanf(line + 3, "%s %s %s", a, op, b) == 3) {
+                int val_a = atoi(a), val_b = atoi(b);
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], a) == 0) val_a = vars[i];
+                    if (strcmp(var_names[i], b) == 0) val_b = vars[i];
+                }
+                int result = 0;
+                if (strcmp(op, ">") == 0) result = val_a > val_b;
+                else if (strcmp(op, "<") == 0) result = val_a < val_b;
+                else if (strcmp(op, "==") == 0) result = val_a == val_b;
+                if (!result) skip_to_end = 1;
+            }
+            continue;
+        }
+        if (strncmp(line, "end", 3) == 0) continue;
+
+        // SAY
+        if (strncmp(line, "say ", 4) == 0) {
+            char *arg = line + 4;
+            int is_array = 0;
+            for (int i = 0; i < array_count; i++) {
+                if (strcmp(array_names[i], arg) == 0) {
+                    printf("[ ");
+                    for (int j = 0; j < array_sizes[i]; j++) printf("%d ", arrays[i][j]);
+                    printf("]\n");
+                    is_array = 1;
+                    break;
+                }
+            }
+            if (!is_array) printf("%s\n", arg);
+        }
+        // ЦВЕТА
+        else if (strncmp(line, "red ", 4) == 0) { printf("\x1b[31m%s\x1b[0m\n", line + 4); }
+        else if (strncmp(line, "green ", 6) == 0) { printf("\x1b[32m%s\x1b[0m\n", line + 6); }
+        else if (strncmp(line, "yellow ", 7) == 0) { printf("\x1b[33m%s\x1b[0m\n", line + 7); }
+        else if (strncmp(line, "blue ", 5) == 0) { printf("\x1b[34m%s\x1b[0m\n", line + 5); }
         // ВРЕМЯ
-        if (strncmp(line, "now", 3) == 0) {
+        else if (strncmp(line, "now", 3) == 0) {
             time_t t = time(NULL);
             struct tm *tm = localtime(&t);
             printf("%02d/%02d/%04d, %02d:%02d:%02d\n", tm->tm_mon + 1, tm->tm_mday, tm->tm_year + 1900, tm->tm_hour, tm->tm_min, tm->tm_sec);
@@ -44,34 +103,37 @@ int main(int argc, char *argv[]) {
             struct tm *tm = localtime(&t);
             printf("%d\n", tm->tm_mday);
         }
-        // IF
-        else if (strncmp(line, "if ", 3) == 0) {
-            char a[50], op[5], b[50];
-            if (sscanf(line + 3, "%s %s %s", a, op, b) == 3) {
-                int val_a = atoi(a), val_b = atoi(b);
-                for (int i = 0; i < var_count; i++) {
-                    if (strcmp(var_names[i], a) == 0) val_a = vars[i];
-                    if (strcmp(var_names[i], b) == 0) val_b = vars[i];
+        // МАССИВЫ
+        else if (strncmp(line, "let ", 4) == 0 && strchr(line, '[') != NULL) {
+            char name[50];
+            int values[20], count = 0;
+            if (sscanf(line + 4, "%s = [", name) == 1) {
+                char *ptr = strchr(line, '[') + 1;
+                while (*ptr != ']' && *ptr != '\0') {
+                    if (*ptr >= '0' && *ptr <= '9') {
+                        values[count++] = atoi(ptr);
+                        while (*ptr >= '0' && *ptr <= '9') ptr++;
+                    } else ptr++;
                 }
-                int result = 0;
-                if (strcmp(op, ">") == 0) result = val_a > val_b;
-                else if (strcmp(op, "<") == 0) result = val_a < val_b;
-                else if (strcmp(op, "==") == 0) result = val_a == val_b;
-                if (!result) skip_to_end = 1;
+                strcpy(array_names[array_count], name);
+                for (int i = 0; i < count; i++) arrays[array_count][i] = values[i];
+                array_sizes[array_count] = count;
+                array_count++;
             }
-            continue;
         }
-        if (strncmp(line, "end", 3) == 0) continue;
-
-        // СКАЗАТЬ
-        if (strncmp(line, "say ", 4) == 0) {
-            printf("%s\n", line + 4);
+        // PUSH
+        else if (strncmp(line, "push ", 5) == 0) {
+            char name[50];
+            int value;
+            if (sscanf(line + 5, "%s %d", name, &value) == 2) {
+                for (int i = 0; i < array_count; i++) {
+                    if (strcmp(array_names[i], name) == 0) {
+                        arrays[i][array_sizes[i]++] = value;
+                        break;
+                    }
+                }
+            }
         }
-        // ЦВЕТА
-        else if (strncmp(line, "red ", 4) == 0) { printf("\x1b[31m%s\x1b[0m\n", line + 4); }
-        else if (strncmp(line, "green ", 6) == 0) { printf("\x1b[32m%s\x1b[0m\n", line + 6); }
-        else if (strncmp(line, "yellow ", 7) == 0) { printf("\x1b[33m%s\x1b[0m\n", line + 7); }
-        else if (strncmp(line, "blue ", 5) == 0) { printf("\x1b[34m%s\x1b[0m\n", line + 5); }
         // ПЕРЕМЕННЫЕ
         else if (strncmp(line, "let ", 4) == 0) {
             char name[50]; int value;
