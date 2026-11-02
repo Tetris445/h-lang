@@ -25,7 +25,6 @@ function transpile(code) {
         let line = raw.trim();
         if (!line || line.startsWith('#')) continue;
 
-        // INCLUDE
         if (line.startsWith('include ')) {
             const libName = line.slice(8).trim();
             const lib = loadLibrary(libName);
@@ -37,10 +36,6 @@ function transpile(code) {
         if (line.startsWith('let ') && line.includes('[') && line.includes(']')) {
             const match = line.match(/let\s+(\w+)\s*=\s*(\[.*\])/);
             if (match) { out.push('var ' + match[1] + ' = ' + match[2] + ';'); continue; }
-        }
-        if (false) {
-            const match = line.match(/let\s+(\w+)\s*=\s*\[(.*?)\]/);
-            if (match) { out.push('var ' + match[1] + ' = [' + match[2] + '];'); continue; }
         }
 
         // ЧТЕНИЕ МАССИВА
@@ -65,19 +60,17 @@ function transpile(code) {
             continue;
         }
 
-        // ЦИКЛ FOR
+        // ЦИКЛЫ
         if (line.startsWith('for ')) {
             const match = line.match(/for\s+(\w+)\s+in\s+(\d+)\s+(\d+)/);
             if (match) { out.push('for (var ' + match[1] + ' = ' + match[2] + '; ' + match[1] + ' <= ' + match[3] + '; ' + match[1] + '++) {'); continue; }
         }
-
-        // ЦИКЛ WHILE
         if (line.startsWith('while ')) {
             out.push('while (' + line.slice(6) + ') {');
             continue;
         }
 
-        // ВЫВОД (умный say)
+        // ВЫВОД
         if (line.startsWith('say ')) {
             let content = line.slice(4).trim();
             if (commands[content]) {
@@ -131,18 +124,26 @@ function transpile(code) {
         if (line.startsWith('yellow ')) { out.push('hPrint("\\x1b[33m" + ' + JSON.stringify(line.slice(7)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('blue ')) { out.push('hPrint("\\x1b[34m" + ' + JSON.stringify(line.slice(5)) + ' + "\\x1b[0m");'); continue; }
 
-        // ПЕРЕМЕННЫЕ
-        if (line.startsWith('let ') && line.includes('input()')) {
-            const name = line.slice(4).split('=')[0].trim();
-            out.push('var ' + name + ' = hRead();');
-            continue;
-        }
-        if (line.startsWith('let ') && line.includes('func ')) { const parts = line.slice(4).split('='); const name = parts[0].trim(); const call = parts[1].trim().split(/\s+/); out.push('var ' + name + ' = ' + call[0] + '(' + call.slice(1).join(', ') + ');'); continue; }
-        if (line.startsWith("let ") && line.includes(" = ") && line.split(" = ")[1].includes(" ")) { const parts = line.slice(4).split(" = "); const name = parts[0].trim(); const call = parts[1].trim().split(/\s+/); out.push("var " + name + " = " + call[0] + "(" + call.slice(1).join(", ") + ");"); continue; }
+        // ПЕРЕМЕННЫЕ (числа, ввод, математика)
         if (line.startsWith('let ')) {
             let rest = line.slice(4);
-            rest = rest.replace(/number\s+(\w+)/g, 'Number($1)')
-                       .replace(/add\s+(\w+)\s+(\w+)/g, '$1 + $2')
+            // Ввод с клавиатуры
+            if (rest.includes('input()')) {
+                const name = rest.split('=')[0].trim();
+                out.push('var ' + name + ' = hRead();');
+                continue;
+            }
+            // Превращение в число
+            if (rest.includes('number ')) {
+                const parts = rest.split('=');
+                const name = parts[0].trim();
+                const val = parts[1].trim();
+                const varName = val.slice(7).trim();
+                out.push('var ' + name + ' = Number(' + varName + ');');
+                continue;
+            }
+            // Математика
+            rest = rest.replace(/add\s+(\w+)\s+(\w+)/g, '$1 + $2')
                        .replace(/sub\s+(\w+)\s+(\w+)/g, '$1 - $2')
                        .replace(/mul\s+(\w+)\s+(\w+)/g, '$1 * $2')
                        .replace(/div\s+(\w+)\s+(\w+)/g, '$1 / $2');
