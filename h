@@ -25,7 +25,19 @@ function transpile(code) {
         let line = raw.trim();
         if (line.length === 0 || line.startsWith('#')) continue;
 
-        
+        // 1. INCLUDE
+        if (line.startsWith('include ')) {
+            const libName = line.slice(8).trim();
+            const lib = loadLibrary(libName);
+            if (lib) { for (const cmd of Object.keys(lib)) commands[cmd] = lib[cmd]; }
+            continue;
+        }
+
+        // 2. МАССИВЫ
+        if (line.startsWith('let ') && line.includes('[') && line.includes(']')) {
+            const match = line.match(/let\s+(\w+)\s*=\s*(\[.*\])/);
+            if (match) { out.push('var ' + match[1] + ' = ' + match[2] + ';'); continue; }
+        }
 
         // 3. ЧТЕНИЕ МАССИВА
         if (line.includes('[') && line.includes(']') && !line.startsWith('let ')) {
@@ -54,18 +66,25 @@ function transpile(code) {
             const match = line.match(/for\s+(\w+)\s+in\s+(\d+)\s+(\d+)/);
             if (match) { out.push('for (var ' + match[1] + ' = ' + match[2] + '; ' + match[1] + ' <= ' + match[3] + '; ' + match[1] + '++) {'); continue; }
         }
-        if (line.startsWith('while ')) { out.push('while (' + line.slice(6) + ') {'); continue; }
+        if (line.startsWith('while ')) {
+            out.push('while (' + line.slice(6) + ') {');
+            continue;
+        }
 
         // 7. ВЫВОД
         if (line.startsWith('say ')) {
             let content = line.slice(4).trim();
-            if (commands[content]) { out.push('hPrint(commands["' + content + '"]());'); }
-            else {
+            if (commands[content]) {
+                out.push('hPrint(commands["' + content + '"]());');
+            } else {
                 const isVar = /^[a-zA-Z_]\w*$/.test(content);
                 const isNum = !isNaN(parseFloat(content)) && isFinite(content);
                 const isStr = content.startsWith('"') || content.startsWith("'");
-                if (isVar || isNum || isStr) out.push('hPrint(' + content + ');');
-                else out.push('hPrint("' + content.replace(/"/g, '\\"') + '");');
+                if (isVar || isNum || isStr) {
+                    out.push('hPrint(' + content + ');');
+                } else {
+                    out.push('hPrint("' + content.replace(/"/g, '\\"') + '");');
+                }
             }
             continue;
         }
@@ -76,60 +95,60 @@ function transpile(code) {
         if (line === 'month') { out.push('hPrint(new Date().getMonth() + 1);'); continue; }
         if (line === 'day') { out.push('hPrint(new Date().getDate());'); continue; }
 
-        // 8. ВЛОЖЕННАЯ МАТЕМАТИКА
-        if (line.startsWith('add ')) {
-            let rest = line.slice(4);
-            if (rest.includes('mul ')) { const p = rest.split(/\s+/); out.push('hPrint(' + p[0] + ' + (' + p[2] + ' * ' + p[3] + '));'); continue; }
-            if (rest.includes('add ')) { const p = rest.split(/\s+/); out.push('hPrint(' + p[0] + ' + (' + p[2] + ' + ' + p[3] + '));'); continue; }
-            out.push('hPrint(' + rest.split(/\s+/)[0] + ' + ' + rest.split(/\s+/)[1] + ');'); continue;
-        }
-        if (line.startsWith('mul ')) {
-            let rest = line.slice(4);
-            if (rest.includes('add ')) { const p = rest.split(/\s+/); out.push('hPrint(' + p[0] + ' * (' + p[2] + ' + ' + p[3] + '));'); continue; }
-            if (rest.includes('mul ')) { const p = rest.split(/\s+/); out.push('hPrint(' + p[0] + ' * (' + p[2] + ' * ' + p[3] + '));'); continue; }
-            out.push('hPrint(' + rest.split(/\s+/)[0] + ' * ' + rest.split(/\s+/)[1] + ');'); continue;
-        }
+        // 8. МАТЕМАТИКА
+        if (line.startsWith('add ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' + ' + p[1] + ');'); continue; }
         if (line.startsWith('sub ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' - ' + p[1] + ');'); continue; }
+        if (line.startsWith('mul ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' * ' + p[1] + ');'); continue; }
         if (line.startsWith('div ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' / ' + p[1] + ');'); continue; }
 
-        // 9. МАТЕМАТИКА
-        if (line.startsWith('sqrt ')) { out.push('hPrint(Math.sqrt(' + line.slice(5) + '));'); continue; }
-        if (line.startsWith('pow ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(Math.pow(' + p[0] + ', ' + p[1] + '));'); continue; }
-        if (line.startsWith('sin ')) { out.push('hPrint(Math.sin(' + line.slice(4) + '));'); continue; }
-        if (line.startsWith('cos ')) { out.push('hPrint(Math.cos(' + line.slice(4) + '));'); continue; }
-        if (line.startsWith('abs ')) { out.push('hPrint(Math.abs(' + line.slice(4) + '));'); continue; }
-        if (line.startsWith('floor ')) { out.push('hPrint(Math.floor(' + line.slice(6) + '));'); continue; }
-        if (line.startsWith('ceil ')) { out.push('hPrint(Math.ceil(' + line.slice(5) + '));'); continue; }
-        if (line.startsWith('round ')) { out.push('hPrint(Math.round(' + line.slice(6) + '));'); continue; }
-        if (line === 'pi') { out.push('hPrint(Math.PI);'); continue; }
-
-        // 10. СЛУЧАЙНЫЕ ЧИСЛА
-        if (line.startsWith('random ')) {
-            const p = line.slice(7).split(/\s+/);
-            out.push('hPrint(Math.floor(Math.random() * (' + p[1] + ' - ' + p[0] + ' + 1)) + ' + p[0] + ');');
-            continue;
-        }
-
-        // 11. ЦВЕТА
+        // 9. ЦВЕТА
         if (line.startsWith('red ')) { out.push('hPrint("\\x1b[31m" + ' + JSON.stringify(line.slice(4)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('green ')) { out.push('hPrint("\\x1b[32m" + ' + JSON.stringify(line.slice(6)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('yellow ')) { out.push('hPrint("\\x1b[33m" + ' + JSON.stringify(line.slice(7)) + ' + "\\x1b[0m");'); continue; }
         if (line.startsWith('blue ')) { out.push('hPrint("\\x1b[34m" + ' + JSON.stringify(line.slice(5)) + ' + "\\x1b[0m");'); continue; }
 
-        // 12. ПЕРЕМЕННЫЕ
+        // 10. ПЕРЕМЕННЫЕ
         if (line.startsWith('let ')) {
             let rest = line.slice(4);
-            if (rest.includes('input()')) { const name = rest.split('=')[0].trim(); out.push('var ' + name + ' = hRead();'); continue; }
-            if (rest.includes('number ')) { const parts = rest.split('='); const name = parts[0].trim(); const val = parts[1].trim(); const varName = val.slice(7).trim(); out.push('var ' + name + ' = Number(' + varName + ');'); continue; }
-            rest = rest.replace(/add\s+(\w+)\s+(\w+)/g, '$1 + $2').replace(/sub\s+(\w+)\s+(\w+)/g, '$1 - $2').replace(/mul\s+(\w+)\s+(\w+)/g, '$1 * $2').replace(/div\s+(\w+)\s+(\w+)/g, '$1 / $2');
+            if (rest.includes('input()')) {
+                const name = rest.split('=')[0].trim();
+                out.push('var ' + name + ' = hRead();');
+                continue;
+            }
+            if (rest.includes('number ')) {
+                const parts = rest.split('=');
+                const name = parts[0].trim();
+                const val = parts[1].trim();
+                const varName = val.slice(7).trim();
+                out.push('var ' + name + ' = Number(' + varName + ');');
+                continue;
+            }
+            rest = rest.replace(/add\s+(\w+)\s+(\w+)/g, '$1 + $2')
+                       .replace(/sub\s+(\w+)\s+(\w+)/g, '$1 - $2')
+                       .replace(/mul\s+(\w+)\s+(\w+)/g, '$1 * $2')
+                       .replace(/div\s+(\w+)\s+(\w+)/g, '$1 / $2');
             out.push('var ' + rest + ';');
             continue;
         }
 
-        // 13. ЛОГИКА
+        // 11. ЛОГИКА
         if (line.startsWith('if ')) { let cond = line.slice(3).replace(/ and /g, ' && ').replace(/ or /g, ' || '); out.push('if (' + cond + ') {'); continue; }
         if (line === 'else') { out.push('} else {'); continue; }
         if (line === 'end') { out.push('}'); continue; }
+
+        // 12. ВЫЗОВ C (fast)
+        if (line.startsWith('fast ')) {
+            const cmd = line.slice(5).trim();
+            out.push('try { const res = require("child_process").execSync("./h2c -c ' + JSON.stringify(cmd) + '").toString(); process.stdout.write(res); } catch(e) { console.log("C Error: " + e.message); }');
+            continue;
+        }
+
+        // 13. ВЫЗОВ PYTHON (py)
+        if (line.startsWith('py ')) {
+            const cmd = line.slice(3).trim();
+            out.push('try { const res = require("child_process").execSync("python3 -c ' + JSON.stringify(cmd) + '").toString(); process.stdout.write(res); } catch(e) { console.log("Python Error: " + e.message); }');
+            continue;
+        }
 
         out.push(line + ';');
     }
