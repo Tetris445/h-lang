@@ -96,6 +96,7 @@ function transpile(code) {
         if (line === 'day') { out.push('hPrint(new Date().getDate());'); continue; }
 
         // 8. МАТЕМАТИКА
+        if (line.startsWith('random ')) { const p = line.slice(7).split(/\s+/); out.push('hPrint(Math.floor(Math.random() * (' + p[1] + ' - ' + p[0] + ' + 1)) + ' + p[0] + ');'); continue; }
         if (line.startsWith('add ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' + ' + p[1] + ');'); continue; }
         if (line.startsWith('sub ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' - ' + p[1] + ');'); continue; }
         if (line.startsWith('mul ')) { const p = line.slice(4).split(/\s+/); out.push('hPrint(' + p[0] + ' * ' + p[1] + ');'); continue; }
