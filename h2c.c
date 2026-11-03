@@ -23,6 +23,12 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // ВЕРСИЯ
+        if (strncmp(line, "version", 7) == 0) {
+            printf("h2c v2.4.5\n");
+            continue;
+        }
+
         // IF
         if (strncmp(line, "if ", 3) == 0) {
             char a[50], op[5], b[50];
