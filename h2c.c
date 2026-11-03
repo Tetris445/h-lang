@@ -42,6 +42,19 @@ int main(int argc, char *argv[]) {
         }
         if (strncmp(line, "end", 3) == 0) continue;
 
+        // СИСТЕМНЫЕ КОМАНДЫ
+        if (strncmp(line, "sys ", 4) == 0) {
+            system(line + 4);
+            continue;
+        }
+        // СЕТЬ (через curl)
+        if (strncmp(line, "net ", 4) == 0) {
+            char buffer[2048];
+            snprintf(buffer, sizeof(buffer), "curl -s %s", line + 4);
+            system(buffer);
+            continue;
+        }
+
         // ВЫВОД
         if (strncmp(line, "say ", 4) == 0) {
             printf("%s\n", line + 4);
