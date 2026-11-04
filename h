@@ -73,6 +73,7 @@ function transpile(code) {
         }
 
         // 7. ВЫВОД
+        if (line === 'version') { out.push('hPrint("h v2.4.5");'); continue; }
         if (line.startsWith('say ')) {
             let content = line.slice(4).trim();
             if (commands[content]) {
