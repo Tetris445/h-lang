@@ -200,6 +200,14 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // NET (через curl)
+        if (strncmp(line, "net ", 4) == 0) {
+            char cmd[1024];
+            sprintf(cmd, "curl -s %s", line + 4);
+            system(cmd);
+            continue;
+        }
+
         // ОБРАБОТКА НЕИЗВЕСТНОЙ КОМАНДЫ
         printf("\033[31mError: Unknown command (Неизвестная команда): %s\033[0m\n", line);
     }
