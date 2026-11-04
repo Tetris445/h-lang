@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        if (strncmp(line, "version", 7) == 0) { printf("\033[33mh2c v2.5.0\033[0m\n"); continue; }
+        if (strncmp(line, "version", 7) == 0) { printf("\033[33mh2c v2.4.5\033[0m\n"); continue; }
 
         // ВРЕМЯ
         if (strncmp(line, "now", 3) == 0) {
