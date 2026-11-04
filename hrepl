@@ -1,0 +1,29 @@
+#!/bin/bash
+echo "h REPL v2.5.0 (введи 'exit' для выхода)"
+while true; do
+    echo -n "h> "
+    read -r line
+    if [ "$line" = "exit" ]; then
+        break
+    fi
+    if [ -n "$line" ]; then
+        TMP_FILE=$(mktemp)
+        echo "$line" > "$TMP_FILE"
+        
+        if [[ "$line" == if* ]] || [[ "$line" == while* ]]; then
+            echo "  ... (введи тело и 'stop' для завершения)"
+            while true; do
+                read -r body
+                if [ "$body" = "stop" ]; then
+                    break
+                fi
+                echo "$body" >> "$TMP_FILE"
+            done
+            echo "end" >> "$TMP_FILE"
+        fi
+        
+        # Запускаем и фильтруем ошибку про end
+        ~/h-lang/h2c "$TMP_FILE" 2>&1 | grep -v "Unknown command (Неизвестная команда): end"
+        rm "$TMP_FILE"
+    fi
+done

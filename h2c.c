@@ -1,17 +1,19 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <time.h>
+#include <string.h>
 #include <math.h>
+#include <time.h>
+
+#define MAX_VARS 100
 
 int main(int argc, char *argv[]) {
     if (argc < 2) { printf("Usage: h2c <file.h>\n"); return 1; }
     FILE *file = fopen(argv[1], "r");
-    if (!file) { printf("File not found\n"); return 1; }
+    if (!file) { printf("\033[31mFile not found\033[0m\n"); return 1; }
 
     char line[1024];
-    int vars[100];
-    char var_names[100][50];
+    int vars[MAX_VARS];
+    char var_names[MAX_VARS][64];
     int var_count = 0;
     int skip_to_end = 0;
 
@@ -24,27 +26,47 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        // ВЕРСИЯ
-        if (strncmp(line, "version", 7) == 0) { printf("h2c v2.4.5\n"); continue; }
+        if (strncmp(line, "version", 7) == 0) { printf("\033[33mh2c v2.5.0\033[0m\n"); continue; }
 
-        // БИБЛИОТЕКА MATH (sqrt)
-        if (strncmp(line, "sqrt ", 5) == 0) {
-            double x = atof(line + 5);
-            printf("%.2f\n", sqrt(x));
+        // ВРЕМЯ
+        if (strncmp(line, "now", 3) == 0) {
+            time_t t = time(NULL);
+            struct tm *tm = localtime(&t);
+            printf("\033[33m%02d:%02d:%02d\033[0m\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
             continue;
         }
 
-        // БИБЛИОТЕКА STRING (len, upper)
-        if (strncmp(line, "len ", 4) == 0) {
-            printf("%lu\n", strlen(line + 4));
+        // ЦВЕТА
+        if (strncmp(line, "red ", 4) == 0) {
+            char *s = line + 4;
+            if (s[0] == '"' || s[0] == '\'') s++;
+            int l = strlen(s);
+            if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0';
+            printf("\033[31m%s\033[0m\n", s);
             continue;
         }
-        if (strncmp(line, "upper ", 6) == 0) {
+        if (strncmp(line, "green ", 6) == 0) {
             char *s = line + 6;
-            for (int i = 0; s[i]; i++) {
-                if (s[i] >= 'a' && s[i] <= 'z') s[i] -= 32;
-            }
-            printf("%s\n", s);
+            if (s[0] == '"' || s[0] == '\'') s++;
+            int l = strlen(s);
+            if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0';
+            printf("\033[32m%s\033[0m\n", s);
+            continue;
+        }
+        if (strncmp(line, "yellow ", 7) == 0) {
+            char *s = line + 7;
+            if (s[0] == '"' || s[0] == '\'') s++;
+            int l = strlen(s);
+            if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0';
+            printf("\033[33m%s\033[0m\n", s);
+            continue;
+        }
+        if (strncmp(line, "blue ", 5) == 0) {
+            char *s = line + 5;
+            if (s[0] == '"' || s[0] == '\'') s++;
+            int l = strlen(s);
+            if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0';
+            printf("\033[34m%s\033[0m\n", s);
             continue;
         }
 
@@ -52,59 +74,134 @@ int main(int argc, char *argv[]) {
         if (strncmp(line, "if ", 3) == 0) {
             char a[50], op[5], b[50];
             if (sscanf(line + 3, "%s %s %s", a, op, b) == 3) {
-                int val_a = atoi(a), val_b = atoi(b);
+                int va = atoi(a), vb = atoi(b);
                 for (int i = 0; i < var_count; i++) {
-                    if (strcmp(var_names[i], a) == 0) val_a = vars[i];
-                    if (strcmp(var_names[i], b) == 0) val_b = vars[i];
+                    if (strcmp(var_names[i], a) == 0) va = vars[i];
+                    if (strcmp(var_names[i], b) == 0) vb = vars[i];
                 }
                 int result = 0;
-                if (strcmp(op, ">") == 0) result = val_a > val_b;
-                else if (strcmp(op, "<") == 0) result = val_a < val_b;
-                else if (strcmp(op, "==") == 0) result = val_a == val_b;
+                if (strcmp(op, ">") == 0) result = va > vb;
+                else if (strcmp(op, "<") == 0) result = va < vb;
+                else if (strcmp(op, "==") == 0) result = va == vb;
                 if (!result) skip_to_end = 1;
+            } else {
+                printf("\033[31mError: Invalid IF syntax\033[0m\n");
             }
             continue;
         }
-        if (strncmp(line, "end", 3) == 0) continue;
 
-        // СИСТЕМА И СЕТЬ
-        if (strncmp(line, "sys ", 4) == 0) { system(line + 4); continue; }
-        if (strncmp(line, "net ", 4) == 0) {
-            char buffer[2048];
-            snprintf(buffer, sizeof(buffer), "curl -s %s", line + 4);
-            system(buffer);
+        // LET
+        if (strncmp(line, "let ", 4) == 0) {
+            char name[64], eq[5], val[64];
+            if (sscanf(line + 4, "%s %s %s", name, eq, val) == 3) {
+                int v = atoi(val);
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], val) == 0) v = vars[i];
+                }
+                int found = 0;
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], name) == 0) { vars[i] = v; found = 1; break; }
+                }
+                if (!found) { strcpy(var_names[var_count], name); vars[var_count++] = v; }
+            } else {
+                printf("\033[31mError: Invalid LET syntax\033[0m\n");
+            }
             continue;
         }
 
-        // ВЫВОД
-        if (strncmp(line, "say ", 4) == 0) { printf("%s\n", line + 4); }
-        else if (strncmp(line, "red ", 4) == 0) { printf("\x1b[31m%s\x1b[0m\n", line + 4); }
-        else if (strncmp(line, "green ", 6) == 0) { printf("\x1b[32m%s\x1b[0m\n", line + 6); }
-        else if (strncmp(line, "yellow ", 7) == 0) { printf("\x1b[33m%s\x1b[0m\n", line + 7); }
-        else if (strncmp(line, "blue ", 5) == 0) { printf("\x1b[34m%s\x1b[0m\n", line + 5); }
-        // ВРЕМЯ
-        else if (strncmp(line, "now", 3) == 0) {
-            time_t t = time(NULL);
-            struct tm *tm = localtime(&t);
-            printf("%02d/%02d/%04d, %02d:%02d:%02d\n", tm->tm_mon + 1, tm->tm_mday, tm->tm_year + 1900, tm->tm_hour, tm->tm_min, tm->tm_sec);
-        }
-        else if (strncmp(line, "year", 4) == 0) { time_t t = time(NULL); struct tm *tm = localtime(&t); printf("%d\n", tm->tm_year + 1900); }
-        else if (strncmp(line, "month", 5) == 0) { time_t t = time(NULL); struct tm *tm = localtime(&t); printf("%d\n", tm->tm_mon + 1); }
-        else if (strncmp(line, "day", 3) == 0) { time_t t = time(NULL); struct tm *tm = localtime(&t); printf("%d\n", tm->tm_mday); }
-        // ПЕРЕМЕННЫЕ
-        else if (strncmp(line, "let ", 4) == 0) {
-            char name[50]; int value;
-            if (sscanf(line + 4, "%s = %d", name, &value) == 2) {
-                strcpy(var_names[var_count], name);
-                vars[var_count] = value;
-                var_count++;
+        // INPUT
+        if (strncmp(line, "input ", 6) == 0) {
+            char name[64];
+            sscanf(line + 6, "%s", name);
+            char buf[64];
+            if (fgets(buf, sizeof(buf), stdin)) {
+                int v = atoi(buf);
+                int found = 0;
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], name) == 0) { vars[i] = v; found = 1; break; }
+                }
+                if (!found) { strcpy(var_names[var_count], name); vars[var_count++] = v; }
             }
+            continue;
         }
+
+        // SAY
+        if (strncmp(line, "say ", 4) == 0) {
+            char *arg = line + 4;
+            int found = 0;
+            for (int i = 0; i < var_count; i++) {
+                if (strcmp(var_names[i], arg) == 0) { printf("\033[33m%d\033[0m\n", vars[i]); found = 1; break; }
+            }
+            if (!found) {
+                int l = strlen(arg);
+                if (l >= 2 && ((arg[0] == '"' && arg[l-1] == '"') || (arg[0] == '\'' && arg[l-1] == '\''))) {
+                    arg[l-1] = '\0';
+                    arg++;
+                }
+                printf("%s\n", arg);
+            }
+            continue;
+        }
+
+        // LEN
+        if (strncmp(line, "len ", 4) == 0) {
+            char *s = line + 4;
+            if (s[0] == '"' || s[0] == '\'') s++;
+            int l = strlen(s);
+            if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0';
+            printf("\033[33m%lu\033[0m\n", strlen(s));
+            continue;
+        }
+
+        // UPPER
+        if (strncmp(line, "upper ", 6) == 0) {
+            char *s = line + 6;
+            if (s[0] == '"' || s[0] == '\'') s++;
+            int l = strlen(s);
+            if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0';
+            for (int i = 0; s[i]; i++) {
+                if (s[i] >= 'a' && s[i] <= 'z') s[i] -= 32;
+            }
+            printf("%s\n", s);
+            continue;
+        }
+
         // МАТЕМАТИКА
-        else if (strncmp(line, "add ", 4) == 0) { char a[50], b[50]; if (sscanf(line + 4, "%s %s", a, b) == 2) { int va = atoi(a), vb = atoi(b); for (int i = 0; i < var_count; i++) { if (strcmp(var_names[i], a) == 0) va = vars[i]; if (strcmp(var_names[i], b) == 0) vb = vars[i]; } printf("%d\n", va + vb); } }
-        else if (strncmp(line, "sub ", 4) == 0) { char a[50], b[50]; if (sscanf(line + 4, "%s %s", a, b) == 2) { int va = atoi(a), vb = atoi(b); for (int i = 0; i < var_count; i++) { if (strcmp(var_names[i], a) == 0) va = vars[i]; if (strcmp(var_names[i], b) == 0) vb = vars[i]; } printf("%d\n", va - vb); } }
-        else if (strncmp(line, "mul ", 4) == 0) { char a[50], b[50]; if (sscanf(line + 4, "%s %s", a, b) == 2) { int va = atoi(a), vb = atoi(b); for (int i = 0; i < var_count; i++) { if (strcmp(var_names[i], a) == 0) va = vars[i]; if (strcmp(var_names[i], b) == 0) vb = vars[i]; } printf("%d\n", va * vb); } }
-        else if (strncmp(line, "div ", 4) == 0) { char a[50], b[50]; if (sscanf(line + 4, "%s %s", a, b) == 2) { int va = atoi(a), vb = atoi(b); for (int i = 0; i < var_count; i++) { if (strcmp(var_names[i], a) == 0) va = vars[i]; if (strcmp(var_names[i], b) == 0) vb = vars[i]; } if (vb != 0) printf("%d\n", va / vb); } }
+        if (strncmp(line, "add ", 4) == 0 || strncmp(line, "sub ", 4) == 0 || 
+            strncmp(line, "mul ", 4) == 0 || strncmp(line, "div ", 4) == 0) {
+            char op[5], a[50], b[50];
+            if (sscanf(line, "%s %s %s", op, a, b) == 3) {
+                int va = atoi(a), vb = atoi(b);
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], a) == 0) va = vars[i];
+                    if (strcmp(var_names[i], b) == 0) vb = vars[i];
+                }
+                if (strcmp(op, "add") == 0) printf("\033[33m%d\033[0m\n", va + vb);
+                else if (strcmp(op, "sub") == 0) printf("\033[33m%d\033[0m\n", va - vb);
+                else if (strcmp(op, "mul") == 0) printf("\033[33m%d\033[0m\n", va * vb);
+                else if (strcmp(op, "div") == 0 && vb != 0) printf("\033[33m%d\033[0m\n", va / vb);
+            } else {
+                printf("\033[31mError: Invalid MATH syntax\033[0m\n");
+            }
+            continue;
+        }
+
+        if (strncmp(line, "sqrt ", 5) == 0) {
+            char a[50];
+            if (sscanf(line + 5, "%s", a) == 1) {
+                int va = atoi(a);
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], a) == 0) va = vars[i];
+                }
+                printf("\033[33m%.2f\033[0m\n", sqrt(va));
+            } else {
+                printf("\033[31mError: Invalid SQRT syntax\033[0m\n");
+            }
+            continue;
+        }
+
+        // ОБРАБОТКА НЕИЗВЕСТНОЙ КОМАНДЫ
+        printf("\033[31mError: Unknown command (Неизвестная команда): %s\033[0m\n", line);
     }
 
     fclose(file);
