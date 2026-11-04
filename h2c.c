@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 int main(int argc, char *argv[]) {
     if (argc < 2) { printf("Usage: h2c <file.h>\n"); return 1; }
@@ -24,8 +25,26 @@ int main(int argc, char *argv[]) {
         }
 
         // ВЕРСИЯ
-        if (strncmp(line, "version", 7) == 0) {
-            printf("h2c v2.4.5\n");
+        if (strncmp(line, "version", 7) == 0) { printf("h2c v2.4.5\n"); continue; }
+
+        // БИБЛИОТЕКА MATH (sqrt)
+        if (strncmp(line, "sqrt ", 5) == 0) {
+            double x = atof(line + 5);
+            printf("%.2f\n", sqrt(x));
+            continue;
+        }
+
+        // БИБЛИОТЕКА STRING (len, upper)
+        if (strncmp(line, "len ", 4) == 0) {
+            printf("%lu\n", strlen(line + 4));
+            continue;
+        }
+        if (strncmp(line, "upper ", 6) == 0) {
+            char *s = line + 6;
+            for (int i = 0; s[i]; i++) {
+                if (s[i] >= 'a' && s[i] <= 'z') s[i] -= 32;
+            }
+            printf("%s\n", s);
             continue;
         }
 
@@ -48,12 +67,8 @@ int main(int argc, char *argv[]) {
         }
         if (strncmp(line, "end", 3) == 0) continue;
 
-        // СИСТЕМНЫЕ КОМАНДЫ
-        if (strncmp(line, "sys ", 4) == 0) {
-            system(line + 4);
-            continue;
-        }
-        // СЕТЬ (через curl)
+        // СИСТЕМА И СЕТЬ
+        if (strncmp(line, "sys ", 4) == 0) { system(line + 4); continue; }
         if (strncmp(line, "net ", 4) == 0) {
             char buffer[2048];
             snprintf(buffer, sizeof(buffer), "curl -s %s", line + 4);
@@ -62,10 +77,7 @@ int main(int argc, char *argv[]) {
         }
 
         // ВЫВОД
-        if (strncmp(line, "say ", 4) == 0) {
-            printf("%s\n", line + 4);
-        }
-        // ЦВЕТА
+        if (strncmp(line, "say ", 4) == 0) { printf("%s\n", line + 4); }
         else if (strncmp(line, "red ", 4) == 0) { printf("\x1b[31m%s\x1b[0m\n", line + 4); }
         else if (strncmp(line, "green ", 6) == 0) { printf("\x1b[32m%s\x1b[0m\n", line + 6); }
         else if (strncmp(line, "yellow ", 7) == 0) { printf("\x1b[33m%s\x1b[0m\n", line + 7); }
