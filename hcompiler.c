@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
             if (len > 0 && (code[len-1] == '"' || code[len-1] == '\'')) code[len-1] = '\0';
             fprintf(out, "    __asm__ volatile(\"%s\");\n", code);
         }
-        // SAY (текст или переменная-число)
+        // SAY
         else if (strncmp(p, "say ", 4) == 0) {
             char *text = p + 4;
             if (text[0] == '"' || text[0] == '\'') text++;
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
                 fprintf(out, "    printf(\"%s\\n\");\n", text);
             }
         }
-        // SAY_STR (вывод строки)
+        // SAY_STR
         else if (strncmp(p, "say_str ", 8) == 0) {
             char *text = p + 8;
             if (text[0] == '"' || text[0] == '\'') text++;
@@ -118,34 +118,23 @@ int main(int argc, char *argv[]) {
         else if (strncmp(p, "mem_status", 10) == 0) { fprintf(out, "    printf(\"Занято: %%d байт\\n\", used);\n"); }
         else if (strncmp(p, "mem_save ", 9) == 0) { char name[64]; sscanf(p + 9, "%s", name); fprintf(out, "    { FILE *f = fopen(\"%s\", \"wb\"); if (f) { fwrite(pool, 1, used, f); fclose(f); printf(\"Память сохранена в %s\\n\"); } }\n", name, name); }
         else if (strncmp(p, "mem_load ", 9) == 0) { char name[64]; sscanf(p + 9, "%s", name); fprintf(out, "    { FILE *f = fopen(\"%s\", \"rb\"); if (f) { fread(pool, 1, used, f); fclose(f); printf(\"Память загружена из %s\\n\"); } }\n", name, name); }
-        // ФАЙЛЫ
+        // ФАЙЛЫ (ЧЕРЕЗ SYSTEM, БЕЗ ОДИНАРНЫХ КАВЫЧЕК)
         else if (strncmp(p, "file_write ", 11) == 0) {
             char name[64], text[256];
             sscanf(p + 11, "%s %[^\n]", name, text);
-            char escaped[512]; int j = 0;
-            for (int i = 0; text[i]; i++) { if (text[i] == '"') { escaped[j++] = '\\'; escaped[j++] = '"'; } else escaped[j++] = text[i]; }
-            escaped[j] = '\0';
-            fprintf(out, "    { FILE *f = fopen(\"%s\", \"w\"); if (f) { fprintf(f, \"%%s\", \"%s\"); fclose(f); printf(\"Записано в %s\\n\"); } }\n", name, escaped, name);
+            fprintf(out, "    system(\"echo %s > %s\");\n", text, name);
         }
-        else if (strncmp(p, "file_read ", 10) == 0) { char name[64]; sscanf(p + 10, "%s", name); fprintf(out, "    { FILE *f = fopen(\"%s\", \"r\"); if (f) { while (fgets(buf, sizeof(buf), f)) printf(\"%%s\", buf); fclose(f); } }\n", name); }
+        else if (strncmp(p, "file_read ", 10) == 0) {
+            char name[64];
+            sscanf(p + 10, "%s", name);
+            fprintf(out, "    system(\"cat %s\");\n", name);
+        }
         // LEN и UPPER
         else if (strncmp(p, "len ", 4) == 0) { char *s = p + 4; if (s[0] == '"' || s[0] == '\'') s++; int l = strlen(s); if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0'; fprintf(out, "    printf(\"%%lu\\n\", strlen(\"%s\"));\n", s); }
         else if (strncmp(p, "upper ", 6) == 0) { char *s = p + 6; if (s[0] == '"' || s[0] == '\'') s++; int l = strlen(s); if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0'; fprintf(out, "    { char tmp[256]; strcpy(tmp, \"%s\"); for (int i = 0; tmp[i]; i++) { if (tmp[i] >= 'a' && tmp[i] <= 'z') tmp[i] -= 32; } printf(\"%%s\\n\", tmp); }\n", s); }
         // NET и SYS
-        else if (strncmp(p, "net ", 4) == 0) {
-            char *cmd = p + 4;
-            char escaped[1024]; int j = 0;
-            for (int i = 0; cmd[i]; i++) { if (cmd[i] == '"') { escaped[j++] = '\\'; escaped[j++] = '"'; } else escaped[j++] = cmd[i]; }
-            escaped[j] = '\0';
-            fprintf(out, "    system(\"curl -s %s\");\n", escaped);
-        }
-        else if (strncmp(p, "sys ", 4) == 0) {
-            char *cmd = p + 4;
-            char escaped[1024]; int j = 0;
-            for (int i = 0; cmd[i]; i++) { if (cmd[i] == '"') { escaped[j++] = '\\'; escaped[j++] = '"'; } else escaped[j++] = cmd[i]; }
-            escaped[j] = '\0';
-            fprintf(out, "    system(\"%s\");\n", escaped);
-        }
+        else if (strncmp(p, "net ", 4) == 0) { fprintf(out, "    system(\"curl -s %s\");\n", p + 4); }
+        else if (strncmp(p, "sys ", 4) == 0) { fprintf(out, "    system(\"%s\");\n", p + 4); }
     }
     
     fprintf(out, "    free(pool);\n");

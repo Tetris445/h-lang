@@ -29,10 +29,6 @@ void print_int(int num) {
 
 // === СТРОКИ ===
 int my_strlen(const char *s) { int l = 0; while (s[l]) l++; return l; }
-int my_strncmp(const char *a, const char *b, int n) {
-    for (int i = 0; i < n; i++) { if (a[i] != b[i]) return a[i] - b[i]; if (a[i] == '\0') return 0; }
-    return 0;
-}
 void my_strcpy(char *dest, const char *src) { int i = 0; while (src[i]) { dest[i] = src[i]; i++; } dest[i] = '\0'; }
 int my_atoi(const char *s) {
     int res = 0, sign = 1, i = 0;
@@ -66,15 +62,10 @@ int read_file(const char *filename, char *buf, int max_len) {
     return bytes;
 }
 
-// === ОЧИСТКА ===
-char* skip_spaces(char *s) {
-    while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n') s++;
-    return s;
-}
-
 // === EXECUTE ===
 void execute(const char *line) {
-    char *p = skip_spaces((char*)line);
+    char *p = (char*)line;
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
     if (p[0] == '\0' || p[0] == '#') return;
 
     // A0
@@ -82,8 +73,12 @@ void execute(const char *line) {
         for (int i = 0; i < MAX_MEM; i++) mem[i][0] = '\0';
         print("[OK] A0: Память очищена\n");
     }
+    // A10 (сначала!)
+    else if (p[0] == 'A' && p[1] == '1' && p[2] == '0') {
+        print("[RESULT] A10: "); print(mem[1]); print("\n");
+    }
     // A1
-    else if (p[0] == 'A' && p[1] == '1' && (p[2] == ' ' || p[2] == '"' || p[2] == '\'')) {
+    else if (p[0] == 'A' && p[1] == '1') {
         char *text = p + 2; while (*text == ' ') text++;
         if (text[0] == '"' || text[0] == '\'') text++;
         int len = my_strlen(text);
@@ -92,7 +87,7 @@ void execute(const char *line) {
         print("[OK] A1: Записано '"); print(mem[1]); print("' в mem[1]\n");
     }
     // A2
-    else if (p[0] == 'A' && p[1] == '2' && (p[2] == ' ' || p[2] == '"' || p[2] == '\'')) {
+    else if (p[0] == 'A' && p[1] == '2') {
         char *text = p + 2; while (*text == ' ') text++;
         if (text[0] == '"' || text[0] == '\'') text++;
         int len = my_strlen(text);
@@ -101,7 +96,7 @@ void execute(const char *line) {
         print("[OK] A2: Записано '"); print(mem[2]); print("' в mem[2]\n");
     }
     // A3
-    else if (p[0] == 'A' && p[1] == '3' && (p[2] == '\0' || p[2] == ' ')) {
+    else if (p[0] == 'A' && p[1] == '3') {
         int a = my_atoi(mem[1]), b = my_atoi(mem[2]);
         int res = a + b;
         char buf[32]; int i = 0;
@@ -110,9 +105,19 @@ void execute(const char *line) {
         buf[i] = '\0'; my_strcpy(mem[3], buf);
         print("[OK] A3: "); print_int(a); print(" + "); print_int(b); print(" = "); print(mem[3]); print("\n");
     }
-    // A10
-    else if (p[0] == 'A' && p[1] == '1' && p[2] == '0') {
-        print("[RESULT] A10: "); print(mem[1]); print("\n");
+    // C1: Создать папку
+    else if (p[0] == 'C' && p[1] == '1') {
+        if (mem[1][0] == '\0') {
+            print("[WARN] C1: mem[1] пуста (нечего создавать)\n");
+        } else {
+            register long x0 __asm__("x0") = -100;
+            register long x1 __asm__("x1") = (long)mem[1];
+            register long x2 __asm__("x2") = 0755;
+            register long x8 __asm__("x8") = 34;
+            __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
+            if ((int)x0 < 0) print("[ERR] C1: Не удалось создать папку\n");
+            else { print("[OK] C1: Папка создана: "); print(mem[1]); print("\n"); }
+        }
     }
     // Неизвестная
     else { print("[ERR] Неизвестная команда: "); print(p); print("\n"); }
@@ -120,7 +125,7 @@ void execute(const char *line) {
 
 // === ТОЧКА ВХОДА ===
 void _start() {
-    char *filename = "/data/data/com.termux/files/home/h-lang/test_asm.h";
+    char *filename = "/data/data/com.termux/files/home/h-lang/test_mkdir.h";
     print("hvm_asm_nolibc: reading "); print(filename); print("\n");
 
     int bytes = read_file(filename, file_buf, sizeof(file_buf));
