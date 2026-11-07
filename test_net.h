@@ -1,2 +1,1 @@
-say "Мой IP:"
-net https://api.ipify.org
+net https://api.github.com

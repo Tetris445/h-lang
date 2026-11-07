@@ -1,7 +1,5 @@
-let a = 1
-let b = 1
-while a < 3 and b < 3
-  say "Цикл работает"
-  let a = add a 1
-  let b = add b 1
+let x = 1
+while x < 3
+  say x
+  let x = x + 1
 end

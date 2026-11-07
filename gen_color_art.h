@@ -1,0 +1,6 @@
+say "yellow    /\\"
+say "yellow   /  \\"
+say "red     /____\\"
+say "blue    |    |"
+say "blue    | [] |"
+say "blue    |____|"

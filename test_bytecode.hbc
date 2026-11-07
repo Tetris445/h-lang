@@ -1,0 +1,4 @@
+# Bytecode for test_bytecode.h
+SAY Hello
+LET x 5
+ADD x 10

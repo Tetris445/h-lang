@@ -1,5 +1,4 @@
-say "1. Системная команда (date):"
+say "Сейчас выполню системную команду:"
+sys echo "Привет из терминала!"
 sys date
-
-say "2. Сетевая команда (curl):"
-net https://api.github.com
+sys node ./h rpg_v250.h

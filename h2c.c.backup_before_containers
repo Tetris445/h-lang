@@ -1,0 +1,169 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+
+#define MAX_VARS 100
+
+// Структура для менеджера памяти
+typedef struct {
+    void *pool;
+    size_t total_size;
+    size_t used_size;
+    int initialized;
+} MemPool;
+
+MemPool mem_pool = {NULL, 0, 0, 0};
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) { printf("Usage: h2c <file.h>\n"); return 1; }
+    FILE *file = fopen(argv[1], "r");
+    if (!file) { printf("\033[31mFile not found\033[0m\n"); return 1; }
+
+    char line[1024];
+    long vars[MAX_VARS];
+    char var_names[MAX_VARS][64];
+    int var_count = 0;
+    int skip_to_end = 0;
+
+    while (fgets(line, sizeof(line), file)) {
+        line[strcspn(line, "\n")] = 0;
+        if (line[0] == '\0' || line[0] == '#') continue;
+
+        // МЕНЕДЖЕР ПАМЯТИ
+        if (strncmp(line, "mem_init ", 9) == 0) {
+            int mb;
+            if (sscanf(line + 9, "%d", &mb) == 1) {
+                size_t bytes = (size_t)mb * 1024 * 1024;
+                mem_pool.pool = malloc(bytes);
+                if (mem_pool.pool) {
+                    mem_pool.total_size = bytes;
+                    mem_pool.used_size = 0;
+                    mem_pool.initialized = 1;
+                    printf("\033[32mПул памяти создан: %d МБ (%zu байт)\033[0m\n", mb, bytes);
+                } else {
+                    printf("\033[31mОшибка: не удалось выделить %d МБ\033[0m\n", mb);
+                }
+            }
+            continue;
+        }
+        if (strncmp(line, "mem_status", 10) == 0) {
+            if (mem_pool.initialized) {
+                printf("\033[33mВсего: %zu байт | Занято: %zu байт | Свободно: %zu байт\033[0m\n", 
+                    mem_pool.total_size, mem_pool.used_size, mem_pool.total_size - mem_pool.used_size);
+            } else {
+                printf("\033[31mПул памяти не создан\033[0m\n");
+            }
+            continue;
+        }
+        if (strncmp(line, "mem_alloc ", 10) == 0) {
+            char name[64]; int size;
+            if (sscanf(line + 10, "%s %d", name, &size) == 2) {
+                if (!mem_pool.initialized) { printf("\033[31mПул не создан\033[0m\n"); continue; }
+                if (mem_pool.used_size + size > mem_pool.total_size) {
+                    printf("\033[31mОшибка: не хватает памяти\033[0m\n");
+                    continue;
+                }
+                void *ptr = (char*)mem_pool.pool + mem_pool.used_size;
+                mem_pool.used_size += size;
+                
+                int found = 0;
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], name) == 0) { vars[i] = (long)ptr; found = 1; break; }
+                }
+                if (!found) { strcpy(var_names[var_count], name); vars[var_count++] = (long)ptr; }
+                printf("\033[32mВыделено %d байт для '%s'\033[0m\n", size, name);
+            }
+            continue;
+        }
+
+        if (skip_to_end) {
+            if (strncmp(line, "end", 3) == 0) skip_to_end = 0;
+            continue;
+        }
+
+        if (strncmp(line, "version", 7) == 0) { printf("\033[33mh2c v2.5.0\033[0m\n"); continue; }
+
+        // IF
+        if (strncmp(line, "if ", 3) == 0) {
+            char a[50], op[5], b[50];
+            if (sscanf(line + 3, "%s %s %s", a, op, b) == 3) {
+                int va = atoi(a), vb = atoi(b);
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], a) == 0) va = vars[i];
+                    if (strcmp(var_names[i], b) == 0) vb = vars[i];
+                }
+                int result = 0;
+                if (strcmp(op, ">") == 0) result = va > vb;
+                else if (strcmp(op, "<") == 0) result = va < vb;
+                else if (strcmp(op, "==") == 0) result = va == vb;
+                if (!result) skip_to_end = 1;
+            }
+            continue;
+        }
+
+        // LET
+        if (strncmp(line, "let ", 4) == 0) {
+            char name[64], eq[5], val[64];
+            if (sscanf(line + 4, "%s %s %s", name, eq, val) == 3) {
+                int v = atoi(val);
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], val) == 0) v = vars[i];
+                }
+                int found = 0;
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], name) == 0) { vars[i] = v; found = 1; break; }
+                }
+                if (!found) { strcpy(var_names[var_count], name); vars[var_count++] = v; }
+            }
+            continue;
+        }
+
+        // INPUT
+        if (strncmp(line, "input ", 6) == 0) {
+            char name[64];
+            sscanf(line + 6, "%s", name);
+            char buf[64];
+            if (fgets(buf, sizeof(buf), stdin)) {
+                int v = atoi(buf);
+                int found = 0;
+                for (int i = 0; i < var_count; i++) {
+                    if (strcmp(var_names[i], name) == 0) { vars[i] = v; found = 1; break; }
+                }
+                if (!found) { strcpy(var_names[var_count], name); vars[var_count++] = v; }
+            }
+            continue;
+        }
+
+        // SAY
+        if (strncmp(line, "say ", 4) == 0) {
+            char *arg = line + 4;
+            int found = 0;
+            for (int i = 0; i < var_count; i++) {
+                if (strcmp(var_names[i], arg) == 0) { printf("\033[33m%ld\033[0m\n", vars[i]); found = 1; break; }
+            }
+            if (!found) {
+                int l = strlen(arg);
+                if (l >= 2 && ((arg[0] == '"' && arg[l-1] == '"') || (arg[0] == '\'' && arg[l-1] == '\''))) {
+                    arg[l-1] = '\0'; arg++;
+                }
+                printf("%s\n", arg);
+            }
+            continue;
+        }
+
+        // ЦВЕТА, ВРЕМЯ, NET, SYS
+        if (strncmp(line, "now", 3) == 0) { time_t t = time(NULL); struct tm *tm = localtime(&t); printf("\033[33m%02d:%02d:%02d\033[0m\n", tm->tm_hour, tm->tm_min, tm->tm_sec); continue; }
+        if (strncmp(line, "net ", 4) == 0) { char cmd[1024]; sprintf(cmd, "curl -s %s", line + 4); system(cmd); continue; }
+        if (strncmp(line, "sys ", 4) == 0) { system(line + 4); continue; }
+
+        // ОШИБКА
+        printf("\033[31mError: Unknown command: %s\033[0m\n", line);
+    }
+
+    // Очистка пула при выходе
+    if (mem_pool.initialized) free(mem_pool.pool);
+    fclose(file);
+    return 0;
+}

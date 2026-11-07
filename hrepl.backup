@@ -1,0 +1,15 @@
+#!/bin/bash
+echo "h REPL v2.5.0 (введи 'exit' для выхода)"
+while true; do
+    echo -n "h> "
+    read -r input
+    if [ "$input" = "exit" ]; then
+        break
+    fi
+    if [ -n "$input" ]; then
+        TMP_FILE=$(mktemp)
+        echo "$input" > "$TMP_FILE"
+        ~/h-lang/h2c "$TMP_FILE"
+        rm "$TMP_FILE"
+    fi
+done

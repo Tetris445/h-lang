@@ -1,0 +1,130 @@
+#!/bin/bash
+if [ -z "$1" ]; then echo "Usage: hcompiler <file.h>"; exit 1; fi
+INPUT="$1"
+OUTPUT="${INPUT%.h}.c"
+echo "// Сгенерировано hcompiler из $INPUT" > "$OUTPUT"
+echo "#include <stdio.h>" >> "$OUTPUT"
+echo "#include <stdlib.h>" >> "$OUTPUT"
+echo "#include <string.h>" >> "$OUTPUT"
+echo "#include <time.h>" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "int main() {" >> "$OUTPUT"
+
+echo "    void *pool = NULL;" >> "$OUTPUT"
+echo "    int used = 0;" >> "$OUTPUT"
+echo "    srand(time(NULL));" >> "$OUTPUT"
+echo "    char buf[256];" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+while IFS= read -r line; do
+    line=$(echo "$line" | xargs)
+    
+    # Основные команды
+    if [[ "$line" == say* ]]; then
+        text=$(echo "$line" | sed 's/^say //')
+        # Если это переменная, выводим её, иначе текст
+        if [[ "$text" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+            echo "    printf(\"%d\\n\", $text);" >> "$OUTPUT"
+        else
+            echo "    printf(\"$text\\n\");" >> "$OUTPUT"
+        fi
+    elif [[ "$line" == let* ]]; then
+        var=$(echo "$line" | awk '{print $2}')
+        val=$(echo "$line" | cut -d'=' -f2- | xargs)
+        if [[ "$val" == *"$var"* ]]; then
+            echo "    $var = $val;" >> "$OUTPUT"
+        else
+            echo "    int $var = $val;" >> "$OUTPUT"
+        fi
+    elif [[ "$line" == add* ]]; then
+        a=$(echo "$line" | awk '{print $2}')
+        b=$(echo "$line" | awk '{print $3}')
+        echo "    printf(\"%d\\n\", $a + $b);" >> "$OUTPUT"
+    elif [[ "$line" == sub* ]]; then
+        a=$(echo "$line" | awk '{print $2}')
+        b=$(echo "$line" | awk '{print $3}')
+        echo "    printf(\"%d\\n\", $a - $b);" >> "$OUTPUT"
+    elif [[ "$line" == mul* ]]; then
+        a=$(echo "$line" | awk '{print $2}')
+        b=$(echo "$line" | awk '{print $3}')
+        echo "    printf(\"%d\\n\", $a * $b);" >> "$OUTPUT"
+    elif [[ "$line" == div* ]]; then
+        a=$(echo "$line" | awk '{print $2}')
+        b=$(echo "$line" | awk '{print $3}')
+        echo "    if ($b != 0) printf(\"%d\\n\", $a / $b);" >> "$OUTPUT"
+    
+    # ЦВЕТА
+    elif [[ "$line" == red* ]]; then
+        text=$(echo "$line" | sed 's/^red //')
+        echo "    printf(\"\\033[31m$text\\033[0m\\n\");" >> "$OUTPUT"
+    elif [[ "$line" == green* ]]; then
+        text=$(echo "$line" | sed 's/^green //')
+        echo "    printf(\"\\033[32m$text\\033[0m\\n\");" >> "$OUTPUT"
+    elif [[ "$line" == yellow* ]]; then
+        text=$(echo "$line" | sed 's/^yellow //')
+        echo "    printf(\"\\033[33m$text\\033[0m\\n\");" >> "$OUTPUT"
+    elif [[ "$line" == blue* ]]; then
+        text=$(echo "$line" | sed 's/^blue //')
+        echo "    printf(\"\\033[34m$text\\033[0m\\n\");" >> "$OUTPUT"
+    
+    # ВРЕМЯ
+    elif [[ "$line" == now* ]]; then
+        echo "    time_t t = time(NULL); struct tm *tm = localtime(&t);" >> "$OUTPUT"
+        echo "    printf(\"\\033[33m%02d:%02d:%02d\\033[0m\\n\", tm->tm_hour, tm->tm_min, tm->tm_sec);" >> "$OUTPUT"
+    
+    # RANDOM
+    elif [[ "$line" == random* ]]; then
+        min=$(echo "$line" | awk '{print $2}')
+        max=$(echo "$line" | awk '{print $3}')
+        echo "    printf(\"%d\\n\", $min + rand() % ($max - $min + 1));" >> "$OUTPUT"
+    
+    # ВВОД
+    elif [[ "$line" == input* ]]; then
+        var=$(echo "$line" | awk '{print $2}')
+        echo "    fgets(buf, sizeof(buf), stdin);" >> "$OUTPUT"
+        echo "    int $var = atoi(buf);" >> "$OUTPUT"
+    
+    # УСЛОВИЯ
+    elif [[ "$line" == if* ]]; then
+        cond=$(echo "$line" | sed 's/^if //')
+        # Если в условии есть кавычки (сравнение строк), заменяем на strcmp
+        if [[ "$cond" == *"=="* && "$cond" == *"\""* ]]; then
+            echo "    if (strcmp($cond) == 0) {" >> "$OUTPUT"
+        else
+            echo "    if ($cond) {" >> "$OUTPUT"
+        fi
+    elif [[ "$line" == else* ]]; then
+        echo "    } else {" >> "$OUTPUT"
+    elif [[ "$line" == end* ]]; then
+        echo "    }" >> "$OUTPUT"
+    
+    # ПАМЯТЬ
+    elif [[ "$line" == mem_init* ]]; then
+        mb=$(echo "$line" | awk '{print $2}')
+        echo "    pool = malloc($mb * 1024 * 1024);" >> "$OUTPUT"
+        echo "    printf(\"Пул памяти создан: $mb МБ\\n\");" >> "$OUTPUT"
+    elif [[ "$line" == mem_alloc* ]]; then
+        name=$(echo "$line" | awk '{print $2}')
+        size=$(echo "$line" | awk '{print $3}')
+        echo "    int *$name = (int*)((char*)pool + used);" >> "$OUTPUT"
+        echo "    used += $size * sizeof(int);" >> "$OUTPUT"
+        echo "    printf(\"Контейнер '$name' создан\\n\");" >> "$OUTPUT"
+    elif [[ "$line" == mem_set* ]]; then
+        name=$(echo "$line" | awk '{print $2}')
+        idx=$(echo "$line" | awk '{print $3}')
+        val=$(echo "$line" | awk '{print $4}')
+        echo "    $name[$idx] = $val;" >> "$OUTPUT"
+    elif [[ "$line" == mem_get* ]]; then
+        name=$(echo "$line" | awk '{print $2}')
+        idx=$(echo "$line" | awk '{print $3}')
+        echo "    printf(\"%d\\n\", $name[$idx]);" >> "$OUTPUT"
+    elif [[ "$line" == mem_status* ]]; then
+        echo "    printf(\"Занято: %d байт\\n\", used);" >> "$OUTPUT"
+    fi
+done < "$INPUT"
+
+echo "    free(pool);" >> "$OUTPUT"
+echo "    return 0;" >> "$OUTPUT"
+echo "}" >> "$OUTPUT"
+
+echo "Сгенерирован C-код: $OUTPUT"

@@ -1,4 +1,2 @@
-say Проверка ввода
-let word = input()
-say Вы ввели:
-say word
+input name
+say name

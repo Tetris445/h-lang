@@ -1,0 +1,56 @@
+#!/bin/bash
+if [ -z "$1" ]; then echo "Usage: hllvm <file.h>"; exit 1; fi
+INPUT="$1"
+OUTPUT="${INPUT%.h}.ll"
+echo "; Сгенерировано hllvm из $INPUT" > "$OUTPUT"
+echo "target triple = \"aarch64-unknown-linux-android\"" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "declare i32 @puts(ptr)" >> "$OUTPUT"
+echo "declare i32 @printf(ptr, ...)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "define i32 @main() {" >> "$OUTPUT"
+echo "entry:" >> "$OUTPUT"
+
+# Выделяем память под переменные
+echo "  %buf = alloca i32" >> "$OUTPUT"
+
+while IFS= read -r line; do
+    line=$(echo "$line" | xargs)
+    
+    if [[ "$line" == say* ]]; then
+        text=$(echo "$line" | sed 's/^say //')
+        # Создаем строку в LLVM IR (глобальную)
+        # Для простоты используем printf с форматом %s
+        # (в реальном LLVM нужно глобальное объявление строки)
+        echo "  ; say $text" >> "$OUTPUT"
+        echo "  call i32 (ptr, ...) @printf(ptr @.str_$(echo "$text" | md5sum | cut -c1-6))" >> "$OUTPUT"
+    elif [[ "$line" == let* ]]; then
+        var=$(echo "$line" | awk '{print $2}')
+        val=$(echo "$line" | cut -d'=' -f2- | xargs)
+        echo "  %$var = alloca i32" >> "$OUTPUT"
+        echo "  store i32 $val, ptr %$var" >> "$OUTPUT"
+    elif [[ "$line" == add* ]]; then
+        a=$(echo "$line" | awk '{print $2}')
+        b=$(echo "$line" | awk '{print $3}')
+        echo "  %tmp_add = add i32 %$a, %$b" >> "$OUTPUT"
+        echo "  call i32 (ptr, ...) @printf(ptr @.str_int, i32 %tmp_add)" >> "$OUTPUT"
+    fi
+done < "$INPUT"
+
+echo "  ret i32 0" >> "$OUTPUT"
+echo "}" >> "$OUTPUT"
+
+# Добавляем строковые константы (для printf)
+echo "" >> "$OUTPUT"
+# Генерируем строки для say (упрощенно)
+while IFS= read -r line; do
+    line=$(echo "$line" | xargs)
+    if [[ "$line" == say* ]]; then
+        text=$(echo "$line" | sed 's/^say //')
+        hash=$(echo "$text" | md5sum | cut -c1-6)
+        echo "@.str_$hash = private unnamed_addr constant [$((${#text} + 2)) x i8] c\"$text\\0A\\00\"" >> "$OUTPUT"
+    fi
+done < "$INPUT"
+echo "@.str_int = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\"" >> "$OUTPUT"
+
+echo "Сгенерирован LLVM IR: $OUTPUT"
