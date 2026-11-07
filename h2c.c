@@ -43,6 +43,8 @@ int main(int argc, char *argv[]) {
         // --- МЕНЕДЖЕР ПАМЯТИ ---
         if (strncmp(line, "mem_init ", 9) == 0) {
             int mb; if (sscanf(line + 9, "%d", &mb) == 1) {
+                if (mem_pool.initialized) free(mem_pool.pool);
+                container_count = 0;
                 size_t bytes = (size_t)mb * 1024 * 1024;
                 mem_pool.pool = malloc(bytes);
                 if (mem_pool.pool) {
@@ -122,7 +124,7 @@ int main(int argc, char *argv[]) {
 
         // --- СТАРОЕ ---
         if (skip_to_end) { if (strncmp(line, "end", 3) == 0) skip_to_end = 0; continue; }
-        if (strncmp(line, "version", 7) == 0) { printf("\033[33mh2c v2.4.6 (with containers)\033[0m\n"); continue; }
+        if (strncmp(line, "version", 7) == 0) { printf("\033[33mh2c v2.4.7 (with containers)\033[0m\n"); continue; }
 
         // IF
         if (strncmp(line, "if ", 3) == 0) {
@@ -189,9 +191,7 @@ int main(int argc, char *argv[]) {
             if (s[0] == '"' || s[0] == '\'') s++;
             int l = strlen(s);
             if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0';
-            for (int i = 0; s[i]; i++) {
-                if (s[i] >= 'a' && s[i] <= 'z') s[i] -= 32;
-            }
+            for (int i = 0; s[i]; i++) { if (s[i] >= 'a' && s[i] <= 'z') s[i] -= 32; }
             printf("%s\n", s);
             continue;
         }
