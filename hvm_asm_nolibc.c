@@ -1,8 +1,10 @@
 #define MAX_MEM 100
 #define MAX_LINE 1024
+#define MAX_DIR 4096
 
 char mem[MAX_MEM][256];
 char file_buf[4096];
+char dir_buf[MAX_DIR];
 
 // === PRINT (sys_write) ===
 void print(const char *str) {
@@ -73,7 +75,7 @@ void execute(const char *line) {
         for (int i = 0; i < MAX_MEM; i++) mem[i][0] = '\0';
         print("[OK] A0: Память очищена\n");
     }
-    // A10 (сначала!)
+    // A10
     else if (p[0] == 'A' && p[1] == '1' && p[2] == '0') {
         print("[RESULT] A10: "); print(mem[1]); print("\n");
     }
@@ -119,16 +121,42 @@ void execute(const char *line) {
             else { print("[OK] C1: Папка создана: "); print(mem[1]); print("\n"); }
         }
     }
+    // C2: Удалить папку
+    else if (p[0] == 'C' && p[1] == '2') {
+        if (mem[1][0] == '\0') {
+            print("[WARN] C2: mem[1] пуста\n");
+        } else {
+            register long x0 __asm__("x0") = -100;
+            register long x1 __asm__("x1") = (long)mem[1];
+            register long x2 __asm__("x2") = 0x200;
+            register long x8 __asm__("x8") = 35;
+            __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
+            if ((int)x0 < 0) print("[ERR] C2: Не удалось удалить папку\n");
+            else { print("[OK] C2: Папка удалена: "); print(mem[1]); print("\n"); }
+        }
+    }
+    // C3: Переименовать папку (mem[1] -> mem[2])
+    else if (p[0] == 'C' && p[1] == '3') {
+        if (mem[1][0] == '\0' || mem[2][0] == '\0') {
+            print("[WARN] C3: mem[1] или mem[2] пуста\n");
+        } else {
+            register long x0 __asm__("x0") = -100;
+            register long x1 __asm__("x1") = (long)mem[1];
+            register long x2 __asm__("x2") = -100;
+            register long x3 __asm__("x3") = (long)mem[2];
+            register long x8 __asm__("x8") = 38;
+            __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x3), "r"(x8) : "memory");
+            if ((int)x0 < 0) print("[ERR] C3: Не удалось переименовать\n");
+            else { print("[OK] C3: Переименовано '"); print(mem[1]); print("' -> '"); print(mem[2]); print("'\n"); }
+        }
+    }
     // Неизвестная
     else { print("[ERR] Неизвестная команда: "); print(p); print("\n"); }
 }
 
 // === ТОЧКА ВХОДА ===
 void _start() {
-    long argc;
-    char **argv;
-    __asm__ volatile("ldr %0, [sp]\n\tadd %1, sp, #8" : "=r"(argc), "=r"(argv) : : "memory");
-    char *filename = (argc > 1) ? argv[1] : "/data/data/com.termux/files/home/h-lang/test_asm.h";
+    char *filename = "/data/data/com.termux/files/home/h-lang/vm_power.h";
     print("hvm_asm_nolibc: reading "); print(filename); print("\n");
     int bytes = read_file(filename, file_buf, sizeof(file_buf));
     if (bytes < 0) {
