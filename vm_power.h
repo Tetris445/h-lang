@@ -1,10 +1,6 @@
 A0
-A1 "/sdcard/my_new_folder"
+A1 "/sdcard/test_c3_old"
 C1
-A1 "/sdcard/another_folder"
-C1
-A1 "/sdcard/my_new_folder"
-A2 "/sdcard/renamed_folder"
+A1 "/sdcard/test_c3_old"
+A2 "/sdcard/test_c3_new"
 C3
-A1 "/sdcard/renamed_folder"
-C2

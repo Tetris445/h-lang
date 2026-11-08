@@ -1,10 +1,8 @@
 #define MAX_MEM 100
 #define MAX_LINE 1024
-#define MAX_DIR 4096
 
 char mem[MAX_MEM][256];
 char file_buf[4096];
-char dir_buf[MAX_DIR];
 
 // === PRINT (sys_write) ===
 void print(const char *str) {
@@ -135,7 +133,7 @@ void execute(const char *line) {
             else { print("[OK] C2: Папка удалена: "); print(mem[1]); print("\n"); }
         }
     }
-    // C3: Переименовать папку (mem[1] -> mem[2])
+    // C3: Переименовать папку (через renameat2)
     else if (p[0] == 'C' && p[1] == '3') {
         if (mem[1][0] == '\0' || mem[2][0] == '\0') {
             print("[WARN] C3: mem[1] или mem[2] пуста\n");
@@ -144,8 +142,9 @@ void execute(const char *line) {
             register long x1 __asm__("x1") = (long)mem[1];
             register long x2 __asm__("x2") = -100;
             register long x3 __asm__("x3") = (long)mem[2];
-            register long x8 __asm__("x8") = 38;
-            __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x3), "r"(x8) : "memory");
+            register long x4 __asm__("x4") = 0;
+            register long x8 __asm__("x8") = 276;
+            __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x8) : "memory");
             if ((int)x0 < 0) print("[ERR] C3: Не удалось переименовать\n");
             else { print("[OK] C3: Переименовано '"); print(mem[1]); print("' -> '"); print(mem[2]); print("'\n"); }
         }
@@ -158,11 +157,13 @@ void execute(const char *line) {
 void _start() {
     char *filename = "/data/data/com.termux/files/home/h-lang/vm_power.h";
     print("hvm_asm_nolibc: reading "); print(filename); print("\n");
+
     int bytes = read_file(filename, file_buf, sizeof(file_buf));
     if (bytes < 0) {
         print("[FATAL] File not found\n");
     } else {
         print("[OK] File read: "); print_int(bytes); print(" bytes\n");
+
         char *line = file_buf;
         while (*line) {
             char cmd[MAX_LINE]; int i = 0;
@@ -172,6 +173,7 @@ void _start() {
             execute(cmd);
         }
     }
+
     register long x0 __asm__("x0") = 0;
     register long x8 __asm__("x8") = 93;
     __asm__ volatile("svc #0" : : "r"(x0), "r"(x8) : "memory");
