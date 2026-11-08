@@ -125,15 +125,16 @@ void execute(const char *line) {
 
 // === ТОЧКА ВХОДА ===
 void _start() {
-    char *filename = "/data/data/com.termux/files/home/h-lang/test_mkdir.h";
+    long argc;
+    char **argv;
+    __asm__ volatile("ldr %0, [sp]\n\tadd %1, sp, #8" : "=r"(argc), "=r"(argv) : : "memory");
+    char *filename = (argc > 1) ? argv[1] : "/data/data/com.termux/files/home/h-lang/test_asm.h";
     print("hvm_asm_nolibc: reading "); print(filename); print("\n");
-
     int bytes = read_file(filename, file_buf, sizeof(file_buf));
     if (bytes < 0) {
         print("[FATAL] File not found\n");
     } else {
         print("[OK] File read: "); print_int(bytes); print(" bytes\n");
-
         char *line = file_buf;
         while (*line) {
             char cmd[MAX_LINE]; int i = 0;
@@ -143,7 +144,6 @@ void _start() {
             execute(cmd);
         }
     }
-
     register long x0 __asm__("x0") = 0;
     register long x8 __asm__("x8") = 93;
     __asm__ volatile("svc #0" : : "r"(x0), "r"(x8) : "memory");
