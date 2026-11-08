@@ -3,6 +3,7 @@
 
 char mem[MAX_MEM][256];
 char file_buf[4096];
+char sys_buf[4096];
 
 // === PRINT (sys_write) ===
 void print(const char *str) {
@@ -84,7 +85,7 @@ void execute(const char *line) {
         int len = my_strlen(text);
         if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0';
         my_strcpy(mem[1], text);
-        print("[OK] A1: Записано '"); print(mem[1]); print("' в mem[1]\n");
+        print("[OK] A1: Записано '"); print(mem[1]); print("'\n");
     }
     // A2
     else if (p[0] == 'A' && p[1] == '2') {
@@ -93,7 +94,7 @@ void execute(const char *line) {
         int len = my_strlen(text);
         if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0';
         my_strcpy(mem[2], text);
-        print("[OK] A2: Записано '"); print(mem[2]); print("' в mem[2]\n");
+        print("[OK] A2: Записано '"); print(mem[2]); print("'\n");
     }
     // A3
     else if (p[0] == 'A' && p[1] == '3') {
@@ -105,49 +106,117 @@ void execute(const char *line) {
         buf[i] = '\0'; my_strcpy(mem[3], buf);
         print("[OK] A3: "); print_int(a); print(" + "); print_int(b); print(" = "); print(mem[3]); print("\n");
     }
-    // C1: Создать папку
+    // A4
+    else if (p[0] == 'A' && p[1] == '4') {
+        int a = my_atoi(mem[1]), b = my_atoi(mem[2]);
+        int res = a - b;
+        char buf[32]; int i = 0;
+        if (res == 0) buf[i++] = '0';
+        else { if (res < 0) { buf[i++] = '-'; res = -res; } char tmp[32]; int j = 0; while (res > 0) { tmp[j++] = '0' + (res % 10); res /= 10; } while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0'; my_strcpy(mem[4], buf);
+        print("[OK] A4: "); print_int(a); print(" - "); print_int(b); print(" = "); print(mem[4]); print("\n");
+    }
+    // A5
+    else if (p[0] == 'A' && p[1] == '5') {
+        int a = my_atoi(mem[1]), b = my_atoi(mem[2]);
+        int res = a * b;
+        char buf[32]; int i = 0;
+        if (res == 0) buf[i++] = '0';
+        else { if (res < 0) { buf[i++] = '-'; res = -res; } char tmp[32]; int j = 0; while (res > 0) { tmp[j++] = '0' + (res % 10); res /= 10; } while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0'; my_strcpy(mem[5], buf);
+        print("[OK] A5: "); print_int(a); print(" * "); print_int(b); print(" = "); print(mem[5]); print("\n");
+    }
+    // A6
+    else if (p[0] == 'A' && p[1] == '6') {
+        int a = my_atoi(mem[1]), b = my_atoi(mem[2]);
+        if (b == 0) { print("[FATAL] A6: Деление на ноль!\n"); return; }
+        int res = a / b;
+        char buf[32]; int i = 0;
+        if (res == 0) buf[i++] = '0';
+        else { if (res < 0) { buf[i++] = '-'; res = -res; } char tmp[32]; int j = 0; while (res > 0) { tmp[j++] = '0' + (res % 10); res /= 10; } while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0'; my_strcpy(mem[6], buf);
+        print("[OK] A6: "); print_int(a); print(" / "); print_int(b); print(" = "); print(mem[6]); print("\n");
+    }
+    // A7
+    else if (p[0] == 'A' && p[1] == '7') {
+        int n = my_strlen(mem[1]);
+        char buf[32]; int i = 0;
+        if (n == 0) buf[i++] = '0';
+        else { char tmp[32]; int j = 0; while (n > 0) { tmp[j++] = '0' + (n % 10); n /= 10; } while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0'; my_strcpy(mem[7], buf);
+        print("[OK] A7: Длина '"); print(mem[1]); print("' = "); print(mem[7]); print("\n");
+    }
+    // A8
+    else if (p[0] == 'A' && p[1] == '8') {
+        my_strcpy(mem[8], mem[1]);
+        for (int i = 0; mem[8][i]; i++) { if (mem[8][i] >= 'a' && mem[8][i] <= 'z') mem[8][i] -= 32; }
+        print("[OK] A8: Верхний регистр: "); print(mem[8]); print("\n");
+    }
+    // A9 (заглушка)
+    else if (p[0] == 'A' && p[1] == '9') {
+        print("[OK] A9: Случайное число (заглушка)\n");
+    }
+    // C1
     else if (p[0] == 'C' && p[1] == '1') {
-        if (mem[1][0] == '\0') {
-            print("[WARN] C1: mem[1] пуста (нечего создавать)\n");
-        } else {
-            register long x0 __asm__("x0") = -100;
-            register long x1 __asm__("x1") = (long)mem[1];
-            register long x2 __asm__("x2") = 0755;
-            register long x8 __asm__("x8") = 34;
-            __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
-            if ((int)x0 < 0) print("[ERR] C1: Не удалось создать папку\n");
-            else { print("[OK] C1: Папка создана: "); print(mem[1]); print("\n"); }
-        }
+        register long x0 __asm__("x0") = -100;
+        register long x1 __asm__("x1") = (long)mem[1];
+        register long x2 __asm__("x2") = 0755;
+        register long x8 __asm__("x8") = 34;
+        __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
+        if ((int)x0 < 0) print("[ERR] C1: Не удалось создать папку\n");
+        else { print("[OK] C1: Папка создана: "); print(mem[1]); print("\n"); }
     }
-    // C2: Удалить папку
+    // C2
     else if (p[0] == 'C' && p[1] == '2') {
-        if (mem[1][0] == '\0') {
-            print("[WARN] C2: mem[1] пуста\n");
-        } else {
-            register long x0 __asm__("x0") = -100;
-            register long x1 __asm__("x1") = (long)mem[1];
-            register long x2 __asm__("x2") = 0x200;
-            register long x8 __asm__("x8") = 35;
-            __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
-            if ((int)x0 < 0) print("[ERR] C2: Не удалось удалить папку\n");
-            else { print("[OK] C2: Папка удалена: "); print(mem[1]); print("\n"); }
-        }
+        register long x0 __asm__("x0") = -100;
+        register long x1 __asm__("x1") = (long)mem[1];
+        register long x2 __asm__("x2") = 0x200;
+        register long x8 __asm__("x8") = 35;
+        __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
+        if ((int)x0 < 0) print("[ERR] C2: Не удалось удалить папку\n");
+        else { print("[OK] C2: Папка удалена: "); print(mem[1]); print("\n"); }
     }
-    // C3: Переименовать папку (через renameat2)
+    // C3
     else if (p[0] == 'C' && p[1] == '3') {
-        if (mem[1][0] == '\0' || mem[2][0] == '\0') {
-            print("[WARN] C3: mem[1] или mem[2] пуста\n");
-        } else {
-            register long x0 __asm__("x0") = -100;
-            register long x1 __asm__("x1") = (long)mem[1];
-            register long x2 __asm__("x2") = -100;
-            register long x3 __asm__("x3") = (long)mem[2];
-            register long x4 __asm__("x4") = 0;
-            register long x8 __asm__("x8") = 276;
-            __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x8) : "memory");
-            if ((int)x0 < 0) print("[ERR] C3: Не удалось переименовать\n");
-            else { print("[OK] C3: Переименовано '"); print(mem[1]); print("' -> '"); print(mem[2]); print("'\n"); }
-        }
+        register long x0 __asm__("x0") = -100;
+        register long x1 __asm__("x1") = (long)mem[1];
+        register long x2 __asm__("x2") = -100;
+        register long x3 __asm__("x3") = (long)mem[2];
+        register long x4 __asm__("x4") = 0;
+        register long x8 __asm__("x8") = 276;
+        __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x8) : "memory");
+        if ((int)x0 < 0) print("[ERR] C3: Не удалось переименовать\n");
+        else { print("[OK] C3: Переименовано '"); print(mem[1]); print("' -> '"); print(mem[2]); print("'\n"); }
+    }
+    // R0
+    else if (p[0] == 'R' && p[1] == '0') {
+        int bytes = read_file("/sys/class/power_supply/battery/temp", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R0: Температура батареи: "); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R0: Не удалось прочитать\n");
+    }
+    // R1
+    else if (p[0] == 'R' && p[1] == '1') {
+        int bytes = read_file("/proc/cpuinfo", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R1: CPU info:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R1: Не удалось прочитать\n");
+    }
+    // R2
+    else if (p[0] == 'R' && p[1] == '2') {
+        int bytes = read_file("/proc/meminfo", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R2: Mem info:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R2: Не удалось прочитать\n");
+    }
+    // R3 (замена на /proc/self/status)
+    else if (p[0] == 'R' && p[1] == '3') {
+        int bytes = read_file("/proc/self/status", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R3: Process status:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R3: Не удалось прочитать\n");
+    }
+    // R4 (замена на /proc/self/mounts)
+    else if (p[0] == 'R' && p[1] == '4') {
+        int bytes = read_file("/proc/self/mounts", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R4: Mounts:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R4: Не удалось прочитать\n");
     }
     // Неизвестная
     else { print("[ERR] Неизвестная команда: "); print(p); print("\n"); }
