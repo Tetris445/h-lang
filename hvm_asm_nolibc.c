@@ -155,7 +155,7 @@ void execute(const char *line) {
 
 // === ТОЧКА ВХОДА ===
 void _start() {
-    char *filename = "/data/data/com.termux/files/home/h-lang/vm_power.h";
+    char *filename = "vm_power.h";
     print("hvm_asm_nolibc: reading "); print(filename); print("\n");
 
     int bytes = read_file(filename, file_buf, sizeof(file_buf));
