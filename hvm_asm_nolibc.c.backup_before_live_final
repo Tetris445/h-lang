@@ -1,0 +1,286 @@
+#define MAX_MEM 100
+#define MAX_LINE 1024
+
+char mem[MAX_MEM][256];
+char file_buf[4096];
+char sys_buf[4096];
+
+// === PRINT (sys_write) ===
+void print(const char *str) {
+    int len = 0; while (str[len]) len++;
+    register long x0 __asm__("x0") = 1;
+    register long x1 __asm__("x1") = (long)str;
+    register long x2 __asm__("x2") = len;
+    register long x8 __asm__("x8") = 64;
+    __asm__ volatile("svc #0" : : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
+}
+
+void print_int(int num) {
+    char buf[32]; int i = 0;
+    if (num == 0) { buf[i++] = '0'; }
+    else {
+        if (num < 0) { buf[i++] = '-'; num = -num; }
+        char tmp[32]; int j = 0;
+        while (num > 0) { tmp[j++] = '0' + (num % 10); num /= 10; }
+        while (j > 0) buf[i++] = tmp[--j];
+    }
+    buf[i] = '\0';
+    print(buf);
+}
+
+// === СТРОКИ ===
+int my_strlen(const char *s) { int l = 0; while (s[l]) l++; return l; }
+void my_strcpy(char *dest, const char *src) { int i = 0; while (src[i]) { dest[i] = src[i]; i++; } dest[i] = '\0'; }
+int my_atoi(const char *s) {
+    int res = 0, sign = 1, i = 0;
+    if (s[0] == '-') { sign = -1; i++; }
+    while (s[i] >= '0' && s[i] <= '9') { res = res * 10 + (s[i] - '0'); i++; }
+    return res * sign;
+}
+
+// === ЧТЕНИЕ ФАЙЛА ===
+int read_file(const char *filename, char *buf, int max_len) {
+    register long x0 __asm__("x0") = -100;
+    register long x1 __asm__("x1") = (long)filename;
+    register long x2 __asm__("x2") = 0;
+    register long x8 __asm__("x8") = 56;
+    __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
+    int fd = (int)x0;
+    if (fd < 0) return -1;
+
+    register long x0_r __asm__("x0") = fd;
+    register long x1_r __asm__("x1") = (long)buf;
+    register long x2_r __asm__("x2") = max_len - 1;
+    register long x8_r __asm__("x8") = 63;
+    __asm__ volatile("svc #0" : "=r"(x0_r) : "r"(x0_r), "r"(x1_r), "r"(x2_r), "r"(x8_r) : "memory");
+    int bytes = (int)x0_r;
+    if (bytes >= 0) buf[bytes] = '\0';
+
+    register long x0_c __asm__("x0") = fd;
+    register long x8_c __asm__("x8") = 57;
+    __asm__ volatile("svc #0" : : "r"(x0_c), "r"(x8_c) : "memory");
+
+    return bytes;
+}
+
+// === EXECUTE ===
+void execute(const char *line) {
+    char *p = (char*)line;
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
+    if (p[0] == '\0' || p[0] == '#') return;
+
+    // A0
+    if (p[0] == 'A' && p[1] == '0' && (p[2] == '\0' || p[2] == ' ')) {
+        for (int i = 0; i < MAX_MEM; i++) mem[i][0] = '\0';
+        print("[OK] A0: Память очищена\n");
+    }
+    // A10
+    else if (p[0] == 'A' && p[1] == '1' && p[2] == '0') {
+        print("[RESULT] A10: "); print(mem[1]); print("\n");
+    }
+    // A1
+    else if (p[0] == 'A' && p[1] == '1') {
+        char *text = p + 2; while (*text == ' ') text++;
+        if (text[0] == '"' || text[0] == '\'') text++;
+        int len = my_strlen(text);
+        if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0';
+        my_strcpy(mem[1], text);
+        print("[OK] A1: Записано '"); print(mem[1]); print("'\n");
+    }
+    // A2
+    else if (p[0] == 'A' && p[1] == '2') {
+        char *text = p + 2; while (*text == ' ') text++;
+        if (text[0] == '"' || text[0] == '\'') text++;
+        int len = my_strlen(text);
+        if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0';
+        my_strcpy(mem[2], text);
+        print("[OK] A2: Записано '"); print(mem[2]); print("'\n");
+    }
+    // A3
+    else if (p[0] == 'A' && p[1] == '3') {
+        int a = my_atoi(mem[1]), b = my_atoi(mem[2]);
+        int res = a + b;
+        char buf[32]; int i = 0;
+        if (res == 0) buf[i++] = '0';
+        else { char tmp[32]; int j = 0; while (res > 0) { tmp[j++] = '0' + (res % 10); res /= 10; } while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0'; my_strcpy(mem[3], buf);
+        print("[OK] A3: "); print_int(a); print(" + "); print_int(b); print(" = "); print(mem[3]); print("\n");
+    }
+    // A4
+    else if (p[0] == 'A' && p[1] == '4') {
+        int a = my_atoi(mem[1]), b = my_atoi(mem[2]);
+        int res = a - b;
+        char buf[32]; int i = 0;
+        if (res == 0) buf[i++] = '0';
+        else { if (res < 0) { buf[i++] = '-'; res = -res; } char tmp[32]; int j = 0; while (res > 0) { tmp[j++] = '0' + (res % 10); res /= 10; } while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0'; my_strcpy(mem[4], buf);
+        print("[OK] A4: "); print_int(a); print(" - "); print_int(b); print(" = "); print(mem[4]); print("\n");
+    }
+    // A5
+    else if (p[0] == 'A' && p[1] == '5') {
+        int a = my_atoi(mem[1]), b = my_atoi(mem[2]);
+        int res = a * b;
+        char buf[32]; int i = 0;
+        if (res == 0) buf[i++] = '0';
+        else { if (res < 0) { buf[i++] = '-'; res = -res; } char tmp[32]; int j = 0; while (res > 0) { tmp[j++] = '0' + (res % 10); res /= 10; } while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0'; my_strcpy(mem[5], buf);
+        print("[OK] A5: "); print_int(a); print(" * "); print_int(b); print(" = "); print(mem[5]); print("\n");
+    }
+    // A6
+    else if (p[0] == 'A' && p[1] == '6') {
+        int a = my_atoi(mem[1]), b = my_atoi(mem[2]);
+        if (b == 0) { print("[FATAL] A6: Деление на ноль!\n"); return; }
+        int res = a / b;
+        char buf[32]; int i = 0;
+        if (res == 0) buf[i++] = '0';
+        else { if (res < 0) { buf[i++] = '-'; res = -res; } char tmp[32]; int j = 0; while (res > 0) { tmp[j++] = '0' + (res % 10); res /= 10; } while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0'; my_strcpy(mem[6], buf);
+        print("[OK] A6: "); print_int(a); print(" / "); print_int(b); print(" = "); print(mem[6]); print("\n");
+    }
+    // A7
+    else if (p[0] == 'A' && p[1] == '7') {
+        int n = my_strlen(mem[1]);
+        char buf[32]; int i = 0;
+        if (n == 0) buf[i++] = '0';
+        else { char tmp[32]; int j = 0; while (n > 0) { tmp[j++] = '0' + (n % 10); n /= 10; } while (j > 0) buf[i++] = tmp[--j]; }
+        buf[i] = '\0'; my_strcpy(mem[7], buf);
+        print("[OK] A7: Длина '"); print(mem[1]); print("' = "); print(mem[7]); print("\n");
+    }
+    // A8
+    else if (p[0] == 'A' && p[1] == '8') {
+        my_strcpy(mem[8], mem[1]);
+        for (int i = 0; mem[8][i]; i++) { if (mem[8][i] >= 'a' && mem[8][i] <= 'z') mem[8][i] -= 32; }
+        print("[OK] A8: Верхний регистр: "); print(mem[8]); print("\n");
+    }
+    // A9 (заглушка)
+    else if (p[0] == 'A' && p[1] == '9') {
+        print("[OK] A9: Случайное число (заглушка)\n");
+    }
+    // C1
+    else if (p[0] == 'C' && p[1] == '1') {
+        register long x0 __asm__("x0") = -100;
+        register long x1 __asm__("x1") = (long)mem[1];
+        register long x2 __asm__("x2") = 0755;
+        register long x8 __asm__("x8") = 34;
+        __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
+        if ((int)x0 < 0) print("[ERR] C1: Не удалось создать папку\n");
+        else { print("[OK] C1: Папка создана: "); print(mem[1]); print("\n"); }
+    }
+    // C2
+    else if (p[0] == 'C' && p[1] == '2') {
+        register long x0 __asm__("x0") = -100;
+        register long x1 __asm__("x1") = (long)mem[1];
+        register long x2 __asm__("x2") = 0x200;
+        register long x8 __asm__("x8") = 35;
+        __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
+        if ((int)x0 < 0) print("[ERR] C2: Не удалось удалить папку\n");
+        else { print("[OK] C2: Папка удалена: "); print(mem[1]); print("\n"); }
+    }
+    // C3
+    else if (p[0] == 'C' && p[1] == '3') {
+        register long x0 __asm__("x0") = -100;
+        register long x1 __asm__("x1") = (long)mem[1];
+        register long x2 __asm__("x2") = -100;
+        register long x3 __asm__("x3") = (long)mem[2];
+        register long x4 __asm__("x4") = 0;
+        register long x8 __asm__("x8") = 276;
+        __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x8) : "memory");
+        if ((int)x0 < 0) print("[ERR] C3: Не удалось переименовать\n");
+        else { print("[OK] C3: Переименовано '"); print(mem[1]); print("' -> '"); print(mem[2]); print("'\n"); }
+    }
+    // R0
+    else if (p[0] == 'R' && p[1] == '0') {
+        int bytes = read_file("/sys/class/power_supply/battery/temp", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R0: Температура батареи: "); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R0: Не удалось прочитать\n");
+    }
+    // R1
+    else if (p[0] == 'R' && p[1] == '1') {
+        int bytes = read_file("/proc/cpuinfo", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R1: CPU info:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R1: Не удалось прочитать\n");
+    }
+    // R2
+    else if (p[0] == 'R' && p[1] == '2') {
+        int bytes = read_file("/proc/meminfo", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R2: Mem info:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R2: Не удалось прочитать\n");
+    }
+    // R3
+    else if (p[0] == 'R' && p[1] == '3') {
+        int bytes = read_file("/proc/self/status", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R3: Process status:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R3: Не удалось прочитать\n");
+    }
+    // R4
+    else if (p[0] == 'R' && p[1] == '4') {
+        int bytes = read_file("/proc/self/mounts", sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] R4: Mounts:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] R4: Не удалось прочитать\n");
+    }
+    // T2: sys date (через execve)
+    else if (p[0] == 'T' && p[1] == '2') {
+        char *argv[] = { "/bin/date", "+%H:%M:%S", 0 };
+        char *envp[] = { 0 };
+        register long x0 __asm__("x0") = (long)"/bin/date";
+        register long x1 __asm__("x1") = (long)argv;
+        register long x2 __asm__("x2") = (long)envp;
+        register long x8 __asm__("x8") = 221;
+        __asm__ volatile("svc #0" : : "r"(x0), "r"(x1), "r"(x2), "r"(x8) : "memory");
+        print("[ERR] T2: Не удалось вызвать /bin/date\n");
+    }
+    // LIVE: Безопасное автономное время (с \r)
+    else if (p[0] == 'L' && p[1] == 'I' && p[2] == 'V' && p[3] == 'E') {
+        while (1) {
+            long sec = 0;
+            register long x0 __asm__("x0") = 1;
+            register long x1 __asm__("x1") = (long)&sec;
+            register long x8 __asm__("x8") = 113;
+            __asm__ volatile("svc #0" : : "r"(x0), "r"(x1), "r"(x8) : "memory");
+            sec += 8 * 3600 + 35 * 60; // Смещение +8:35 (поменяй на своё!)
+            int hours = (sec / 3600) % 24;
+            int minutes = (sec / 60) % 60;
+            int seconds = sec % 60;
+            // Возврат каретки и вывод времени
+            print("\r\033[33m[ ");
+            if (hours < 10) print("0"); print_int(hours); print(":");
+            if (minutes < 10) print("0"); print_int(minutes); print(":");
+            if (seconds < 10) print("0"); print_int(seconds);
+            print(" ]\033[0m");
+            // Задержка 1 секунда
+            long ts_sec = 1, ts_nsec = 0;
+            register long x0_s __asm__("x0") = 0;
+            register long x1_s __asm__("x1") = (long)&ts_sec;
+            register long x8_s __asm__("x8") = 101;
+            __asm__ volatile("svc #0" : : "r"(x0_s), "r"(x1_s), "r"(x8_s) : "memory");
+        }
+    }
+    // Неизвестная
+    else { print("[ERR] Неизвестная команда: "); print(p); print("\n"); }
+}
+
+// === ТОЧКА ВХОДА ===
+void _start() {
+    char *filename = "vm_power.h";
+    print("hvm_asm_nolibc: reading "); print(filename); print("\n");
+
+    int bytes = read_file(filename, file_buf, sizeof(file_buf));
+    if (bytes < 0) {
+        print("[FATAL] File not found\n");
+    } else {
+        print("[OK] File read: "); print_int(bytes); print(" bytes\n");
+
+        char *line = file_buf;
+        while (*line) {
+            char cmd[MAX_LINE]; int i = 0;
+            while (*line && *line != '\n' && i < MAX_LINE - 1) { cmd[i++] = *line++; }
+            cmd[i] = '\0';
+            if (*line == '\n') line++;
+            execute(cmd);
+        }
+    }
+
+    register long x0 __asm__("x0") = 0;
+    register long x8 __asm__("x8") = 93;
+    __asm__ volatile("svc #0" : : "r"(x0), "r"(x8) : "memory");
+}

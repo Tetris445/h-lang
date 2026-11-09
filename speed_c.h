@@ -1,0 +1,8 @@
+let sum = 0
+let i = 0
+while i < 10000000
+  sum = sum + i
+  i = i + 1
+end
+say Результат:
+say sum

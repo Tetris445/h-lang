@@ -1,6 +1,5 @@
 A0
-A1 "/sdcard/test_c3_old"
-C1
-A1 "/sdcard/test_c3_old"
-A2 "/sdcard/test_c3_new"
-C3
+A1 test_file.txt
+A2 "Привет из VM!"
+B1
+B2

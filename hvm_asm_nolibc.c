@@ -63,6 +63,34 @@ int read_file(const char *filename, char *buf, int max_len) {
     return bytes;
 }
 
+// === ЗАПИСЬ В ФАЙЛ ===
+int write_file(const char *filename, const char *content) {
+    // openat(AT_FDCWD, filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)
+    register long x0 __asm__("x0") = -100;
+    register long x1 __asm__("x1") = (long)filename;
+    register long x2 __asm__("x2") = 1 | 64 | 512; // O_WRONLY(1) | O_CREAT(64) | O_TRUNC(512)
+    register long x3 __asm__("x3") = 0644;
+    register long x8 __asm__("x8") = 56;
+    __asm__ volatile("svc #0" : "=r"(x0) : "r"(x0), "r"(x1), "r"(x2), "r"(x3), "r"(x8) : "memory");
+    
+    int fd = (int)x0;
+    if (fd < 0) return -1;
+
+    int len = my_strlen(content);
+    register long x0_w __asm__("x0") = fd;
+    register long x1_w __asm__("x1") = (long)content;
+    register long x2_w __asm__("x2") = len;
+    register long x8_w __asm__("x8") = 64;
+    __asm__ volatile("svc #0" : "=r"(x0_w) : "r"(x0_w), "r"(x1_w), "r"(x2_w), "r"(x8_w) : "memory");
+    int written = (int)x0_w;
+
+    register long x0_c __asm__("x0") = fd;
+    register long x8_c __asm__("x8") = 57;
+    __asm__ volatile("svc #0" : : "r"(x0_c), "r"(x8_c) : "memory");
+
+    return written;
+}
+
 // === EXECUTE ===
 void execute(const char *line) {
     char *p = (char*)line;
@@ -206,17 +234,43 @@ void execute(const char *line) {
         if (bytes > 0) { print("[OK] R2: Mem info:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
         else print("[ERR] R2: Не удалось прочитать\n");
     }
-    // R3 (замена на /proc/self/status)
+    // R3
     else if (p[0] == 'R' && p[1] == '3') {
         int bytes = read_file("/proc/self/status", sys_buf, sizeof(sys_buf));
         if (bytes > 0) { print("[OK] R3: Process status:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
         else print("[ERR] R3: Не удалось прочитать\n");
     }
-    // R4 (замена на /proc/self/mounts)
+    // R4
     else if (p[0] == 'R' && p[1] == '4') {
         int bytes = read_file("/proc/self/mounts", sys_buf, sizeof(sys_buf));
         if (bytes > 0) { print("[OK] R4: Mounts:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
         else print("[ERR] R4: Не удалось прочитать\n");
+    }
+    // === НОВОЕ: B1 (Запись в файл) ===
+    else if (p[0] == 'B' && p[1] == '1') {
+        char *filename = p + 2; while (*filename == ' ') filename++;
+        char *content = filename;
+        while (*content && *content != ' ') content++;
+        
+        if (*content == ' ') { *content = '\0'; content++; } // Разделяем путь и текст
+        else { content[0] = '\0'; } // Если нет текста, шлем пустую строку
+
+        // Убираем кавычки
+        if (filename[0] == '"') { filename++; int l = my_strlen(filename); if (l>0 && filename[l-1]=='"') filename[l-1]='\0'; }
+        if (content[0] == '"') { content++; int l = my_strlen(content); if (l>0 && content[l-1]=='"') content[l-1]='\0'; }
+
+        int written = write_file(filename, content);
+        if (written < 0) { print("[ERR] B1: Не удалось записать файл\n"); }
+        else { print("[OK] B1: Записано "); print_int(written); print(" байт в "); print(filename); print("\n"); }
+    }
+    // === НОВОЕ: B2 (Чтение произвольного файла) ===
+    else if (p[0] == 'B' && p[1] == '2') {
+        char *filename = p + 2; while (*filename == ' ') filename++;
+        if (filename[0] == '"') { filename++; int l = my_strlen(filename); if (l>0 && filename[l-1]=='"') filename[l-1]='\0'; }
+
+        int bytes = read_file(filename, sys_buf, sizeof(sys_buf));
+        if (bytes > 0) { print("[OK] B2: Прочитано "); print_int(bytes); print(" байт:\n"); print(sys_buf); print("\n"); sys_buf[0] = '\0'; }
+        else print("[ERR] B2: Не удалось прочитать файл\n");
     }
     // Неизвестная
     else { print("[ERR] Неизвестная команда: "); print(p); print("\n"); }

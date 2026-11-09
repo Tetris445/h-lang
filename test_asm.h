@@ -1,5 +1,3 @@
 A0
-A1 "10"
-A2 "5"
-A3
-A10
+A1 my_new_project
+C1

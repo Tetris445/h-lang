@@ -2,6 +2,36 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Получить ANSI-код по имени цвета
+const char* color_map(const char* name) {
+    if (strcmp(name, "red") == 0) return "\033[31m";
+    if (strcmp(name, "green") == 0) return "\033[32m";
+    if (strcmp(name, "yellow") == 0) return "\033[33m";
+    if (strcmp(name, "blue") == 0) return "\033[34m";
+    if (strcmp(name, "magenta") == 0) return "\033[35m";
+    if (strcmp(name, "cyan") == 0) return "\033[36m";
+    if (strcmp(name, "white") == 0) return "\033[37m";
+    if (strcmp(name, "black") == 0) return "\033[30m";
+    return "\033[37m"; // Белый по умолчанию
+}
+
+// Смешивание двух цветов
+const char* mix_colors(const char* c1, const char* c2) {
+    // Если один из цветов уже смешанный - не поддерживаем (возвращаем белый)
+    if (strstr(c1, "+") || strstr(c2, "+")) return "\033[37m";
+
+    // Логика смешивания (RGB-приближение)
+    if ((strcmp(c1,"red")==0 && strcmp(c2,"green")==0) || (strcmp(c1,"green")==0 && strcmp(c2,"red")==0)) return "\033[33m"; // Yellow
+    if ((strcmp(c1,"red")==0 && strcmp(c2,"blue")==0) || (strcmp(c1,"blue")==0 && strcmp(c2,"red")==0)) return "\033[35m"; // Magenta
+    if ((strcmp(c1,"green")==0 && strcmp(c2,"blue")==0) || (strcmp(c1,"blue")==0 && strcmp(c2,"green")==0)) return "\033[36m"; // Cyan
+    if ((strcmp(c1,"red")==0 && strcmp(c2,"yellow")==0) || (strcmp(c1,"yellow")==0 && strcmp(c2,"red")==0)) return "\033[91m"; // Light Red
+    if ((strcmp(c1,"red")==0 && strcmp(c2,"white")==0) || (strcmp(c1,"white")==0 && strcmp(c2,"red")==0)) return "\033[95m"; // Light Magenta
+    if ((strcmp(c1,"blue")==0 && strcmp(c2,"white")==0) || (strcmp(c1,"white")==0 && strcmp(c2,"blue")==0)) return "\033[94m"; // Light Blue
+    if ((strcmp(c1,"green")==0 && strcmp(c2,"white")==0) || (strcmp(c1,"white")==0 && strcmp(c2,"green")==0)) return "\033[92m"; // Light Green
+    
+    return "\033[37m"; // Белый, если комбинация неизвестна
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) { printf("Usage: hcompiler <file.h>\n"); return 1; }
     FILE *in = fopen(argv[1], "r");
@@ -91,11 +121,29 @@ int main(int argc, char *argv[]) {
         else if (strncmp(p, "sin ", 4) == 0) { fprintf(out, "    printf(\"%%f\\n\", sin(%s));\n", p + 4); }
         else if (strncmp(p, "cos ", 4) == 0) { fprintf(out, "    printf(\"%%f\\n\", cos(%s));\n", p + 4); }
         else if (strncmp(p, "pow ", 4) == 0) { char a[64], b[64]; sscanf(p + 4, "%s %s", a, b); fprintf(out, "    printf(\"%%f\\n\", pow(%s, %s));\n", a, b); }
-        // ЦВЕТА
+        
+        // === ЦВЕТА (ОБНОВЛЕНО) ===
+        else if (strncmp(p, "mix ", 4) == 0) {
+            char c1[32], c2[32], text[256];
+            sscanf(p + 4, "%31s %31s %[^\n]", c1, c2, text);
+            // Убираем кавычки у текста
+            if (text[0] == '"' || text[0] == '\'') { 
+                memmove(text, text + 1, strlen(text)); 
+                int l = strlen(text); 
+                if (l > 0 && (text[l-1] == '"' || text[l-1] == '\'')) text[l-1] = '\0'; 
+            }
+            const char* code = mix_colors(c1, c2);
+            fprintf(out, "    printf(\"%s%s\\033[0m\\n\");\n", code, text);
+        }
         else if (strncmp(p, "red ", 4) == 0) { char *text = p + 4; if (text[0] == '"' || text[0] == '\'') text++; int len = strlen(text); if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0'; fprintf(out, "    printf(\"\\033[31m%s\\033[0m\\n\");\n", text); }
         else if (strncmp(p, "green ", 6) == 0) { char *text = p + 6; if (text[0] == '"' || text[0] == '\'') text++; int len = strlen(text); if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0'; fprintf(out, "    printf(\"\\033[32m%s\\033[0m\\n\");\n", text); }
         else if (strncmp(p, "yellow ", 7) == 0) { char *text = p + 7; if (text[0] == '"' || text[0] == '\'') text++; int len = strlen(text); if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0'; fprintf(out, "    printf(\"\\033[33m%s\\033[0m\\n\");\n", text); }
         else if (strncmp(p, "blue ", 5) == 0) { char *text = p + 5; if (text[0] == '"' || text[0] == '\'') text++; int len = strlen(text); if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0'; fprintf(out, "    printf(\"\\033[34m%s\\033[0m\\n\");\n", text); }
+        else if (strncmp(p, "magenta ", 8) == 0) { char *text = p + 8; if (text[0] == '"' || text[0] == '\'') text++; int len = strlen(text); if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0'; fprintf(out, "    printf(\"\\033[35m%s\\033[0m\\n\");\n", text); }
+        else if (strncmp(p, "cyan ", 5) == 0) { char *text = p + 5; if (text[0] == '"' || text[0] == '\'') text++; int len = strlen(text); if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0'; fprintf(out, "    printf(\"\\033[36m%s\\033[0m\\n\");\n", text); }
+        else if (strncmp(p, "white ", 6) == 0) { char *text = p + 6; if (text[0] == '"' || text[0] == '\'') text++; int len = strlen(text); if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0'; fprintf(out, "    printf(\"\\033[37m%s\\033[0m\\n\");\n", text); }
+        else if (strncmp(p, "black ", 6) == 0) { char *text = p + 6; if (text[0] == '"' || text[0] == '\'') text++; int len = strlen(text); if (len > 0 && (text[len-1] == '"' || text[len-1] == '\'')) text[len-1] = '\0'; fprintf(out, "    printf(\"\\033[30m%s\\033[0m\\n\");\n", text); }
+        
         // ВРЕМЯ
         else if (strncmp(p, "now", 3) == 0) { fprintf(out, "    { time_t t = time(NULL); struct tm *tm = localtime(&t); printf(\"\\033[33m%%02d:%%02d:%%02d\\033[0m\\n\", tm->tm_hour, tm->tm_min, tm->tm_sec); }\n"); }
         // РАНДОМ
@@ -118,17 +166,9 @@ int main(int argc, char *argv[]) {
         else if (strncmp(p, "mem_status", 10) == 0) { fprintf(out, "    printf(\"Занято: %%d байт\\n\", used);\n"); }
         else if (strncmp(p, "mem_save ", 9) == 0) { char name[64]; sscanf(p + 9, "%s", name); fprintf(out, "    { FILE *f = fopen(\"%s\", \"wb\"); if (f) { fwrite(pool, 1, used, f); fclose(f); printf(\"Память сохранена в %s\\n\"); } }\n", name, name); }
         else if (strncmp(p, "mem_load ", 9) == 0) { char name[64]; sscanf(p + 9, "%s", name); fprintf(out, "    { FILE *f = fopen(\"%s\", \"rb\"); if (f) { fread(pool, 1, used, f); fclose(f); printf(\"Память загружена из %s\\n\"); } }\n", name, name); }
-        // ФАЙЛЫ (ЧЕРЕЗ SYSTEM, БЕЗ ОДИНАРНЫХ КАВЫЧЕК)
-        else if (strncmp(p, "file_write ", 11) == 0) {
-            char name[64], text[256];
-            sscanf(p + 11, "%s %[^\n]", name, text);
-            fprintf(out, "    system(\"echo %s > %s\");\n", text, name);
-        }
-        else if (strncmp(p, "file_read ", 10) == 0) {
-            char name[64];
-            sscanf(p + 10, "%s", name);
-            fprintf(out, "    system(\"cat %s\");\n", name);
-        }
+        // ФАЙЛЫ (через sys)
+        else if (strncmp(p, "file_write ", 11) == 0) { char name[64], text[256]; sscanf(p + 11, "%s %[^\n]", name, text); fprintf(out, "    system(\"echo %s > %s\");\n", text, name); }
+        else if (strncmp(p, "file_read ", 10) == 0) { char name[64]; sscanf(p + 10, "%s", name); fprintf(out, "    system(\"cat %s\");\n", name); }
         // LEN и UPPER
         else if (strncmp(p, "len ", 4) == 0) { char *s = p + 4; if (s[0] == '"' || s[0] == '\'') s++; int l = strlen(s); if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0'; fprintf(out, "    printf(\"%%lu\\n\", strlen(\"%s\"));\n", s); }
         else if (strncmp(p, "upper ", 6) == 0) { char *s = p + 6; if (s[0] == '"' || s[0] == '\'') s++; int l = strlen(s); if (l > 0 && (s[l-1] == '"' || s[l-1] == '\'')) s[l-1] = '\0'; fprintf(out, "    { char tmp[256]; strcpy(tmp, \"%s\"); for (int i = 0; tmp[i]; i++) { if (tmp[i] >= 'a' && tmp[i] <= 'z') tmp[i] -= 32; } printf(\"%%s\\n\", tmp); }\n", s); }

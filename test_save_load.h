@@ -1,23 +1,10 @@
-say "Создаем пул на 10 МБ:"
-mem_init 10
+say "1. Создаем память и записываем число:"
+mem_init 5
+mem_alloc arr 10
+mem_set arr 0 777
 
-say "Создаем контейнер 'hp' на 1 элемент:"
-mem_alloc hp 1
+say "2. Сохраняем память в файл:"
+mem_save arr "my_data.bin"
 
-say "Записываем здоровье 100:"
-mem_set hp 0 100
-
-say "Сохраняем память в файл 'save.dat':"
-mem_save save.dat
-
-say "Забываем все и создаем новый пул (как при перезапуске):"
-mem_init 10
-
-say "Пытаемся прочитать 'hp' (должно быть пусто):"
-mem_get hp 0
-
-say "Загружаем память из файла 'save.dat':"
-mem_load save.dat
-
-say "Читаем здоровье из загруженной памяти:"
-mem_get hp 0
+say "3. Проверяем, что файл создан:"
+sys ls -la my_data.bin

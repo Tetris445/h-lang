@@ -1,0 +1,7 @@
+A0
+A1 10
+A2 5
+A3
+A10
+A1 test_folder_final
+C1

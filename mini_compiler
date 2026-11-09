@@ -1,0 +1,24 @@
+#!/bin/bash
+INPUT="$1"
+OUTPUT="${INPUT%.mini}.asm"
+
+echo "A0" > "$OUTPUT"
+
+while IFS= read -r line; do
+    line=$(echo "$line" | xargs)
+    if [[ "$line" == print* ]]; then
+        text=$(echo "$line" | sed 's/^print //')
+        echo "A1 $text" >> "$OUTPUT"
+        echo "A10" >> "$OUTPUT"
+    elif [[ "$line" == let* ]]; then
+        var=$(echo "$line" | awk '{print $2}')
+        val=$(echo "$line" | awk '{print $4}')
+        echo "A1 \"$val\"" >> "$OUTPUT"
+    elif [[ "$line" == add* ]]; then
+        echo "A3" >> "$OUTPUT"
+    elif [[ "$line" == show* ]]; then
+        echo "A10" >> "$OUTPUT"
+    fi
+done < "$INPUT"
+
+echo "Скомпилировано в $OUTPUT"
