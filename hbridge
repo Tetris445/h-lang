@@ -1,62 +1,44 @@
 #!/bin/bash
+# hbridge v5.1 — мост для чистого h (bare-metal) с QEMU
 
 case "$1" in
     build)
-        # Компиляция в машинный код
         shift
         INPUT="$1"
         if [ -z "$INPUT" ]; then echo "Usage: hbridge build <file.h>"; exit 1; fi
+
+        echo "🔄 Компиляция в машинный код..."
         
-        echo "⚙️ Компиляция в машинный код..."
-        ~/h-lang/hcompiler "$INPUT" > /dev/null 2>&1
-        C_FILE="${INPUT%.h}.c"
+        # 1. Препроцессинг
+        ./hprep "$INPUT"
+        PP_FILE="${INPUT%.h}_pp.h"
+        
+        if [ ! -f "$PP_FILE" ]; then
+            echo "❌ Ошибка препроцессинга!"
+            exit 1
+        fi
+
+        # 2. Генерация C-кода
+        ./hcompiler_bare "$PP_FILE" > /dev/null 2>&1
+        C_FILE="${PP_FILE%.h}.c"
         BIN_FILE="${INPUT%.h}"
-        
-        clang "$C_FILE" -o "$BIN_FILE" -lm -O0 2>/dev/null
-        
+
+        # 3. Сборка для ARM64 (bare-metal)
+        clang --target=aarch64-linux-gnu -nostdlib -nostartfiles -fno-pic -no-pie -nostdinc -T link.ld start.S "$C_FILE" -o "$BIN_FILE" 2>/dev/null
+
         if [ -f "$BIN_FILE" ]; then
-            echo "✅ Готово! Запускаю..."
-            rm -f "$C_FILE"
-            "$BIN_FILE"
+            echo "✅ Готово! Запускаю в QEMU..."
+            qemu-system-aarch64 -M virt -cpu cortex-a53 -nographic -kernel "$BIN_FILE"
         else
             echo "❌ Ошибка компиляции!"
+            echo "Проверь $C_FILE или $PP_FILE"
         fi
         ;;
-    
-    run)
-        # Умный запуск: Node.js или C
-        shift
-        INPUT="$1"
-        if [ -z "$INPUT" ]; then echo "Usage: hbridge run <file.h>"; exit 1; fi
-        
-        # Если есть команды, которые понимает только Node.js (while, for, random)
-        if grep -qE "while|for|random" "$INPUT"; then
-            echo "=== Обнаружены циклы/рандом. Запуск через Node.js ==="
-            ~/h-lang/h "$INPUT"
-        # Если есть команды памяти (mem_), запускаем через C
-        elif grep -q "mem_" "$INPUT"; then
-            echo "=== Обнаружена память. Запуск через C-движок ==="
-            ~/h-lang/h2c "$INPUT"
-        else
-            echo "=== Запуск через C-движок (быстро) ==="
-            ~/h-lang/h2c "$INPUT"
-        fi
-        ;;
-    
-    fast)
-        # Мгновенный запуск через C-движок
-        shift
-        INPUT="$1"
-        if [ -z "$INPUT" ]; then echo "Usage: hbridge fast <file.h>"; exit 1; fi
-        ~/h-lang/h2c "$INPUT"
-        ;;
-    
+
     *)
-        echo "hbridge v4.0 — Умный мост между C, Node.js и бинарником"
+        echo "hbridge v5.1 — мост для чистого h (bare-metal)"
         echo ""
         echo "Использование:"
-        echo "  hbridge build <file.h> - Компиляция в машинный код и запуск"
-        echo "  hbridge run <file.h>   - Умный запуск (Node.js или C)"
-        echo "  hbridge fast <file.h>  - Мгновенный запуск через C"
+        echo "  hbridge build <file.h> - Компиляция и запуск в QEMU"
         ;;
 esac

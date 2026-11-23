@@ -1,0 +1,7 @@
+say "Тест условий и циклов"
+if 5 > 3
+if 2 > 5
+while 10 > 5
+while 5 > 10
+input name
+say "Конец!"

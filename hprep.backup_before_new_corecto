@@ -1,0 +1,48 @@
+#!/bin/bash
+# hprep — препроцессор для h (вставляет библиотеки и карективы)
+
+if [ -z "$1" ]; then
+    echo "Usage: hprep <file.h>"
+    exit 1
+fi
+
+INPUT="$1"
+OUTPUT="${INPUT%.h}_pp.h"
+
+> "$OUTPUT"
+
+while IFS= read -r line; do
+    # Проверяем карективу {import: "..."}
+    if [[ "$line" =~ \{import:[[:space:]]*\"(.*)\"\} ]]; then
+        LIB="${BASH_REMATCH[1]}"
+        case "$LIB" in
+            "Java SDK")
+                echo "sys java -version" >> "$OUTPUT"
+                ;;
+            "Python")
+                echo "sys python --version" >> "$OUTPUT"
+                ;;
+            "Node.js")
+                echo "sys node --version" >> "$OUTPUT"
+                ;;
+            *)
+                echo "# {import: \"$LIB\"} — неизвестная библиотека" >> "$OUTPUT"
+                ;;
+        esac
+    # Проверяем use
+    elif [[ "$line" =~ ^[[:space:]]*use[[:space:]]+(.+)$ ]]; then
+        LIB="${BASH_REMATCH[1]}"
+        LIB=$(echo "$LIB" | tr -d '[:space:]')
+        if [ -f "$LIB" ]; then
+            echo "# --- Included from $LIB ---" >> "$OUTPUT"
+            cat "$LIB" >> "$OUTPUT"
+            echo "# --- End of $LIB ---" >> "$OUTPUT"
+        else
+            echo "# ERROR: Library not found: $LIB" >> "$OUTPUT"
+        fi
+    else
+        echo "$line" >> "$OUTPUT"
+    fi
+done < "$INPUT"
+
+echo "Preprocessed: $OUTPUT"

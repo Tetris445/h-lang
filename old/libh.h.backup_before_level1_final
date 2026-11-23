@@ -1,0 +1,61 @@
+// libh.h — Стандартная библиотека для hOS (bare-metal)
+
+#ifndef LIBH_H
+#define LIBH_H
+
+#include "uart.c"
+
+// === МАТЕМАТИКА ===
+int add(int a, int b) { return a + b; }
+int sub(int a, int b) { return a - b; }
+int mul(int a, int b) { return a * b; }
+int div(int a, int b) { return (b != 0) ? a / b : 0; }
+int mod(int a, int b) { return (b != 0) ? a % b : 0; }
+
+// === СТРОКИ ===
+int len(const char *s) {
+    int l = 0; while (s[l]) l++; return l;
+}
+
+void upper(char *s) {
+    for (int i = 0; s[i]; i++) if (s[i] >= 'a' && s[i] <= 'z') s[i] -= 32;
+}
+
+void lower(char *s) {
+    for (int i = 0; s[i]; i++) if (s[i] >= 'A' && s[i] <= 'Z') s[i] += 32;
+}
+
+// === ЦВЕТА (ANSI) ===
+void set_color(const char *color) {
+    uart_puts(color);
+}
+void reset_color() { uart_puts("\033[0m"); }
+
+// === ГРАФИКА (ПСЕВДО) ===
+void clear_screen() { uart_puts("\033[2J\033[H"); }
+void cursor_home() { uart_puts("\033[H"); }
+void cursor_up()   { uart_puts("\033[A"); }
+void cursor_down() { uart_puts("\033[B"); }
+void cursor_right(){ uart_puts("\033[C"); }
+void cursor_left() { uart_puts("\033[D"); }
+
+// === ВЫВОД ===
+void say_int(int num) { uart_putint(num); uart_putc('\n'); }
+
+// === ЧТЕНИЕ СТРОКИ ===
+void read_string(char *buf, int max_len) {
+    int i = 0;
+    while (1) {
+        char c = uart_getc();
+        if (c == '\r' || c == '\n') break;
+        if (c == 127 || c == 8) {
+            if (i > 0) { i--; uart_puts("\b \b"); }
+        } else if (c >= 32 && c <= 126 && i < max_len - 1) {
+            buf[i++] = c; uart_putc(c);
+        }
+    }
+    buf[i] = '\0';
+    uart_putc('\n');
+}
+
+#endif

@@ -1,0 +1,21 @@
+#!/bin/bash
+if [ -z "$1" ]; then echo "Usage: hprep <file.h>"; exit 1; fi
+INPUT="$1"; OUTPUT="${INPUT%.h}_pp.h"; > "$OUTPUT"
+while IFS= read -r line; do
+    if [[ "$line" =~ say[[:space:]]*\{[[:space:]]*\"(.*)\"[[:space:]]*\} ]]; then
+        echo "say \"${BASH_REMATCH[1]}\"" >> "$OUTPUT"
+    elif [[ "$line" =~ import:[[:space:]]*\{[[:space:]]*\"(.*)\"[[:space:]]*\} ]]; then
+        LIB="${BASH_REMATCH[1]}"
+        case "$LIB" in
+            "java SDK"|"java") echo "sys java -version" >> "$OUTPUT" ;;
+            "python"|"Python") echo "sys python --version" >> "$OUTPUT" ;;
+            *) echo "# import: \"$LIB\" - unknown" >> "$OUTPUT" ;;
+        esac
+    elif [[ "$line" =~ ^[[:space:]]*use[[:space:]]+(.+)$ ]]; then
+        LIB="${BASH_REMATCH[1]}"; LIB=$(echo "$LIB" | tr -d '[:space:]')
+        if [ -f "$LIB" ]; then cat "$LIB" >> "$OUTPUT"; else echo "# ERROR: $LIB" >> "$OUTPUT"; fi
+    else
+        echo "$line" >> "$OUTPUT"
+    fi
+done < "$INPUT"
+echo "Preprocessed: $OUTPUT"

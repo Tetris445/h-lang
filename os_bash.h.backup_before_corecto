@@ -1,0 +1,70 @@
+#!/bin/bash
+# os_bash.h — Мини-ОС на Bash (v0.5.3)
+
+echo "========================================="
+echo "     hOS v0.5.3 (Bash Edition)           "
+echo "========================================="
+echo "Введите 'help' для списка команд."
+
+while true; do
+    echo -n "hOS> "
+    read -r cmd
+
+    if [ -z "$cmd" ]; then
+        continue
+    fi
+
+    case "$cmd" in
+        "help")
+            echo "Команды: help, say, add, sub, mul, div, exit"
+            ;;
+        "say"*)
+            text="${cmd#say }"
+            if [ -z "$text" ]; then
+                echo "[ERR] Пустой текст"
+            else
+                echo "$text"
+            fi
+            ;;
+        "add"*)
+            args="${cmd#add }"
+            args_clean=$(echo "$args" | tr -d ' ')
+            result=$(( $args_clean ))
+            echo "[RESULT] $result"
+            ;;
+        "sub"*)
+            args="${cmd#sub }"
+            args_clean=$(echo "$args" | tr -d ' ')
+            result=$(( $args_clean ))
+            echo "[RESULT] $result"
+            ;;
+        "mul"*)
+            args="${cmd#mul }"
+            args_clean=$(echo "$args" | tr -d ' ')
+            # Разделяем по *
+            a=$(echo "$args_clean" | cut -d'*' -f1)
+            b=$(echo "$args_clean" | cut -d'*' -f2)
+            result=$(( a * b ))
+            echo "[RESULT] $result"
+            ;;
+        "div"*)
+            args="${cmd#div }"
+            args_clean=$(echo "$args" | tr -d ' ')
+            if echo "$args_clean" | grep -q "/0"; then
+                echo "[ERR] Деление на ноль!"
+            else
+                a=$(echo "$args_clean" | cut -d'/' -f1)
+                b=$(echo "$args_clean" | cut -d'/' -f2)
+                result=$(( a / b ))
+                echo "[RESULT] $result"
+            fi
+            ;;
+        "exit")
+            echo "Bye!"
+            exit 0
+            ;;
+        *)
+            echo "Неизвестная команда: $cmd"
+            ;;
+    esac
+done

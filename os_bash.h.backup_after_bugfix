@@ -1,0 +1,48 @@
+# os_bash.h — Мини-ОС на Bash
+
+echo "========================================="
+echo "     hOS v0.4 (Bash Edition)             "
+echo "========================================="
+echo "Введите 'help' для списка команд."
+
+while true; do
+    echo -n "hOS> "
+    read cmd
+
+    case "$cmd" in
+        "help")
+            echo "Команды: help, say, add, sub, mul, div, exit"
+            ;;
+        "say"*)
+            text="${cmd#say }"
+            echo "$text"
+            ;;
+        "add"*)
+            args="${cmd#add }"
+            result=$(eval "echo $args" 2>/dev/null)
+            echo "[RESULT] $result"
+            ;;
+        "sub"*)
+            args="${cmd#sub }"
+            result=$(eval "echo $args" 2>/dev/null)
+            echo "[RESULT] $result"
+            ;;
+        "mul"*)
+            args="${cmd#mul }"
+            result=$(eval "echo $args" 2>/dev/null)
+            echo "[RESULT] $result"
+            ;;
+        "div"*)
+            args="${cmd#div }"
+            result=$(eval "echo $args" 2>/dev/null)
+            echo "[RESULT] $result"
+            ;;
+        "exit")
+            echo "Bye!"
+            exit 0
+            ;;
+        *)
+            echo "Неизвестная команда: $cmd"
+            ;;
+    esac
+done
