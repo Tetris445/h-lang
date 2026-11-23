@@ -1,13 +1,20 @@
 #!/bin/bash
-# os_bash.h — Мини-ОС на Bash (v0.7.0 с цветами)
+# os_bash.h — Мини-ОС на Bash (v0.7.2 с printf)
 
-echo "========================================="
-echo "     hOS v0.7.0 (Bash Edition)           "
-echo "========================================="
-echo "Введите 'help' для списка команд."
+RED='\033[31m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+BLUE='\033[34m'
+CYAN='\033[36m'
+RESET='\033[0m'
+
+echo -e "${CYAN}=========================================${RESET}"
+echo -e "${CYAN}     hOS v0.7.2 (Bash Edition)           ${RESET}"
+echo -e "${CYAN}=========================================${RESET}"
+echo -e "Введите ${YELLOW}'help'${RESET} для списка команд."
 
 while true; do
-    echo -n "hOS> "
+    printf "${GREEN}hOS> ${RESET}"
     read -r cmd
 
     if [ -z "$cmd" ]; then
@@ -16,12 +23,12 @@ while true; do
 
     case "$cmd" in
         "help")
-            echo "Команды: help, say, add, sub, mul, div, sys, color, reset, exit"
+            echo -e "${CYAN}Команды:${RESET} help, say, add, sub, mul, div, sys, color, reset, exit"
             ;;
         "say"*)
             text="${cmd#say }"
             if [ -z "$text" ]; then
-                echo "[ERR] Пустой текст"
+                echo -e "${RED}[ERR] Пустой текст${RESET}"
             else
                 echo "$text"
             fi
@@ -30,13 +37,13 @@ while true; do
             args="${cmd#add }"
             args_clean=$(echo "$args" | tr -d ' ')
             result=$(( $args_clean ))
-            echo "[RESULT] $result"
+            echo -e "${YELLOW}[RESULT] ${result}${RESET}"
             ;;
         "sub"*)
             args="${cmd#sub }"
             args_clean=$(echo "$args" | tr -d ' ')
             result=$(( $args_clean ))
-            echo "[RESULT] $result"
+            echo -e "${YELLOW}[RESULT] ${result}${RESET}"
             ;;
         "mul"*)
             args="${cmd#mul }"
@@ -44,47 +51,47 @@ while true; do
             a=$(echo "$args_clean" | cut -d'*' -f1)
             b=$(echo "$args_clean" | cut -d'*' -f2)
             result=$(( a * b ))
-            echo "[RESULT] $result"
+            echo -e "${YELLOW}[RESULT] ${result}${RESET}"
             ;;
         "div"*)
             args="${cmd#div }"
             args_clean=$(echo "$args" | tr -d ' ')
             if echo "$args_clean" | grep -q "/0"; then
-                echo "[ERR] Деление на ноль!"
+                echo -e "${RED}[ERR] Деление на ноль!${RESET}"
             else
                 a=$(echo "$args_clean" | cut -d'/' -f1)
                 b=$(echo "$args_clean" | cut -d'/' -f2)
                 result=$(( a / b ))
-                echo "[RESULT] $result"
+                echo -e "${YELLOW}[RESULT] ${result}${RESET}"
             fi
             ;;
         "sys"*)
             sys_cmd="${cmd#sys }"
-            echo "[SYS] Выполняю: $sys_cmd"
+            echo -e "${BLUE}[SYS] Выполняю: ${sys_cmd}${RESET}"
             eval "$sys_cmd"
             ;;
         "color"*)
             color="${cmd#color }"
             case "$color" in
-                "red") echo -e "\033[31m" ;;
-                "green") echo -e "\033[32m" ;;
-                "yellow") echo -e "\033[33m" ;;
-                "blue") echo -e "\033[34m" ;;
+                "red") echo -e "${RED}" ;;
+                "green") echo -e "${GREEN}" ;;
+                "yellow") echo -e "${YELLOW}" ;;
+                "blue") echo -e "${BLUE}" ;;
                 "magenta") echo -e "\033[35m" ;;
-                "cyan") echo -e "\033[36m" ;;
+                "cyan") echo -e "${CYAN}" ;;
                 "white") echo -e "\033[37m" ;;
-                *) echo "Неизвестный цвет: $color" ;;
+                *) echo -e "${RED}Неизвестный цвет: $color${RESET}" ;;
             esac
             ;;
         "reset")
-            echo -e "\033[0m"
+            echo -e "${RESET}"
             ;;
         "exit")
-            echo "Bye!"
+            echo -e "${CYAN}Bye!${RESET}"
             exit 0
             ;;
         *)
-            echo "Неизвестная команда: $cmd"
+            echo -e "${RED}Неизвестная команда: $cmd${RESET}"
             ;;
     esac
 done
