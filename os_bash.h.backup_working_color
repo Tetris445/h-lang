@@ -1,0 +1,32 @@
+#!/bin/bash
+RED='\033[31m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+CYAN='\033[36m'
+RESET='\033[0m'
+
+clear
+echo -e "${CYAN}=========================================${RESET}"
+echo -e "${CYAN}     hOS v1.0 (Color Edition)            ${RESET}"
+echo -e "${CYAN}=========================================${RESET}"
+echo -e "Введите ${YELLOW}'help'${RESET} для списка команд."
+
+while true; do
+    echo -n -e "${GREEN}hOS> ${RESET}"
+    read -r cmd
+    if [ -z "$cmd" ]; then continue; fi
+
+    case "$cmd" in
+        "help") echo -e "Команды: help, say, add, sub, mul, div, sys, color, reset, exit" ;;
+        "say"*) echo "${cmd#say }" ;;
+        "add"*) args="${cmd#add }"; args_clean=$(echo "$args" | tr -d ' '); echo -e "${YELLOW}[RESULT] $(( $args_clean ))${RESET}" ;;
+        "sub"*) args="${cmd#sub }"; args_clean=$(echo "$args" | tr -d ' '); echo -e "${YELLOW}[RESULT] $(( $args_clean ))${RESET}" ;;
+        "mul"*) args="${cmd#mul }"; args_clean=$(echo "$args" | tr -d ' '); a=$(echo "$args_clean" | cut -d'*' -f1); b=$(echo "$args_clean" | cut -d'*' -f2); echo -e "${YELLOW}[RESULT] $(( a * b ))${RESET}" ;;
+        "div"*) args="${cmd#div }"; args_clean=$(echo "$args" | tr -d ' '); if echo "$args_clean" | grep -q "/0"; then echo -e "${RED}[ERR] Деление на ноль!${RESET}"; else a=$(echo "$args_clean" | cut -d'/' -f1); b=$(echo "$args_clean" | cut -d'/' -f2); echo -e "${YELLOW}[RESULT] $(( a / b ))${RESET}"; fi ;;
+        "sys"*) sys_cmd="${cmd#sys }"; echo -e "${CYAN}[SYS] ${sys_cmd}${RESET}"; eval "$sys_cmd" ;;
+        "color"*) color="${cmd#color }"; case "$color" in "red") echo -e "${RED}" ;; "green") echo -e "${GREEN}" ;; "yellow") echo -e "${YELLOW}" ;; "cyan") echo -e "${CYAN}" ;; *) echo -e "${RED}Неизвестный цвет${RESET}" ;; esac ;;
+        "reset") echo -e "${RESET}" ;;
+        "exit") echo -e "${CYAN}Bye!${RESET}"; exit 0 ;;
+        *) echo -e "${RED}Неизвестная команда: $cmd${RESET}" ;;
+    esac
+done
